@@ -40,7 +40,7 @@ export function Header() {
                   ContractMind
                 </span>
                 <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 font-mono">
-                  v1.0
+                  v1.5
                 </span>
               </div>
               <p className="text-[10px] text-gray-400 -mt-0.5 tracking-wide">Autonomous Legal Redline AI</p>
