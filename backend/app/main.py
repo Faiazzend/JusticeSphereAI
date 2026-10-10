@@ -54,6 +54,7 @@ if os.path.exists(STATIC_DIR):
 
 @app.get("/")
 @app.get("/index.html")
+@app.get("/studio")
 async def root():
     index_file = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(index_file):
