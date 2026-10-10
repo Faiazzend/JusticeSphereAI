@@ -1,0 +1,466 @@
+# 🏛️ ContractMind v1.5 — The Ultimate Master Architecture & Reproduction Prompt (A-Z)
+
+> **Document Version:** 1.5.0  
+> **Target Project:** ContractMind v1.5 (Autonomous Multi-Agent Legal AI Studio)  
+> **Track:** JusticeSphere_AI — AI Builders Congress 2026  
+> **Repository:** [https://github.com/Faiazzend/JusticeSphereAI](https://github.com/Faiazzend/JusticeSphereAI)
+
+---
+
+```markdown
+You are an elite Principal AI Systems Architect and Legal Tech Engineer.
+Build "ContractMind v1.5" from scratch: an enterprise-grade, autonomous multi-agent legal intelligence platform that ingests commercial contracts, conducts adversarial negotiation debate, synthesizes consensus redlines with authentic Word Track Changes, and extracts structured obligation matrices.
+
+Implement the system strictly following the exact architectural specifications, data models, agent graphs, styling design system, and API protocols below.
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+1. High-Level Architecture & Technical Stack
+2. Directory Structure & File Hierarchy
+3. Database Models & Schema Specifications
+4. PDF Ingestion, Table Extraction & PII Redaction
+5. Contextual RAG & Semantic Chunking Engine
+6. Multi-Agent StateGraph Pipeline (4 Agents)
+7. Multi-Provider LLM Gateway & Fallback Simulator
+8. Word (.docx) OpenXML Track Changes Engine
+9. Model Context Protocol (MCP) Server
+10. Token & Cost Telemetry Engine
+11. FastAPI REST API & Streaming Endpoints
+12. Frontend: Alpine.js & Tailwind Neo-Legal Studio
+13. Deployment & Production Orchestration
+
+================================================================================
+1. HIGH-LEVEL ARCHITECTURE & TECHNICAL STACK
+================================================================================
+- Backend Framework: FastAPI (Python 3.10+) with async endpoints and lifespan database initialization.
+- Database: SQLite with async SQLAlchemy 2.0 (aiosqlite). Fallback to /tmp paths if VERCEL=1 is detected.
+- Vector Engine: ChromaDB persistent client with automatic fallback to in-memory term-frequency cosine scorer.
+- Document Processing: PyMuPDF (fitz) for text and tabular layout extraction, python-docx with custom OpenXML manipulation for Track Changes.
+- Agent Architecture: StateGraph pattern with 4 specialized roles:
+  1. Auditor Agent (Enterprise defender, compliance auditor)
+  2. Opposing Counsel Agent (Counterparty negotiator, aggressive pusher)
+  3. Redline Synthesizer Agent (Consensus arbiter, diff builder, composite scorer)
+  4. Obligation Extractor Agent (Calendar extractor, role matrix, penalty monitor)
+- Protocol: Model Context Protocol (MCP) HTTP/JSON-RPC gateway exposing tools.
+- Frontend: Single-Page Application (SPA) built using Alpine.js 3.14, Tailwind CSS, FontAwesome 6, Plus Jakarta Sans, and JetBrains Mono. Zero React build step required for core UI. Includes an interactive 6-step guided rundown tour with high-intensity glowing halo spotlights.
+- Deployment: Fully configured for both local 1-click batch execution and Vercel Multi-Service deployment.
+
+================================================================================
+2. DIRECTORY STRUCTURE & FILE HIERARCHY
+================================================================================
+Create the following directory layout:
+├── backend/
+│   ├── app/
+│   │   ├── agents/
+│   │   │   ├── nodes/
+│   │   │   │   ├── auditor_agent.py
+│   │   │   │   ├── opposing_agent.py
+│   │   │   │   ├── redline_agent.py
+│   │   │   │   └── obligation_agent.py
+│   │   │   ├── graph.py
+│   │   │   ├── llm_client.py
+│   │   │   └── state.py
+│   │   ├── api/
+│   │   │   ├── v1/
+│   │   │   │   ├── analysis.py
+│   │   │   │   ├── contracts.py
+│   │   │   │   ├── playbook.py
+│   │   │   │   └── stream.py
+│   │   │   └── deps.py
+│   │   ├── core/
+│   │   │   ├── pii_redactor.py
+│   │   │   ├── security.py
+│   │   │   └── token_tracker.py
+│   │   ├── mcp_server/
+│   │   │   └── server.py
+│   │   ├── models/
+│   │   │   ├── audit.py
+│   │   │   ├── contract.py
+│   │   │   └── user.py
+│   │   ├── schemas/
+│   │   │   ├── contract_schemas.py
+│   │   │   ├── obligation_schemas.py
+│   │   │   ├── playbook_schemas.py
+│   │   │   └── risk_schemas.py
+│   │   ├── services/
+│   │   │   ├── diff_engine.py
+│   │   │   ├── export_service.py
+│   │   │   ├── pdf_processor.py
+│   │   │   └── rag_engine.py
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   └── main.py
+│   ├── static/
+│   │   └── index.html
+│   ├── main.py
+│   └── requirements.txt
+├── frontend/
+│   ├── app/
+│   │   └── route.ts
+│   ├── public/
+│   │   └── index.html
+│   ├── next.config.js
+│   └── package.json
+├── sample_contracts/
+├── launch.py
+├── run_contractmind.bat
+├── vercel.json
+└── README.md
+
+================================================================================
+3. DATABASE MODELS & SCHEMA SPECIFICATIONS
+================================================================================
+Implement async SQLAlchemy 2.0 models:
+
+1. Contract (`app/models/contract.py`):
+   - `id`: String (UUID primary key)
+   - `title`: String(255)
+   - `original_filename`: String(255)
+   - `file_path`: String(512)
+   - `status`: String(50), default "uploaded" ("uploaded", "processing", "analyzed", "error")
+   - `overall_risk_score`: Float, default 0.0 (0-100 scale)
+   - `raw_text`: Text
+   - `playbook_name`: String(100), default "Standard Corporate Playbook"
+   - `extracted_sections`: JSON (list of {section_number, title, content, page_number})
+   - `identified_risks`: JSON (list of risks)
+   - `debate_transcript`: JSON (list of {agent_name, timestamp, content, target_clause})
+   - `redlines`: JSON (list of clause diff objects)
+   - `obligations`: JSON (list of extracted obligation dictionaries)
+   - `risk_summary`: JSON (counts of critical, high, medium, low risks)
+   - `created_at`: DateTime(timezone=True), default lambda: datetime.now(timezone.utc)
+   - `updated_at`: DateTime(timezone=True), onupdate lambda: datetime.now(timezone.utc)
+
+2. AuditLog (`app/models/audit.py`):
+   - `id`: Integer primary key, autoincrement
+   - `contract_id`: String(36), nullable foreign key
+   - `agent_name`: String(100)
+   - `action`: String(100)
+   - `prompt_tokens`: Integer
+   - `completion_tokens`: Integer
+   - `total_tokens`: Integer
+   - `latency_ms`: Float
+   - `model_name`: String(100)
+   - `estimated_cost_usd`: Float (6 decimal places)
+   - `details`: Text, nullable
+   - `created_at`: DateTime(timezone=True), default lambda: datetime.now(timezone.utc)
+
+================================================================================
+4. PDF INGESTION, TABLE EXTRACTION & PII REDACTION
+================================================================================
+1. `app/core/pii_redactor.py`:
+   - Define compiled regex patterns for:
+     - SSN: `\b\d{3}-\d{2}-\d{4}\b`
+     - Credit Cards: `\b(?:\d{4}[-\s]?){3}\d{4}\b`
+     - Email: `\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b`
+     - Phone: `\b(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})\b`
+     - Bank Account: `\b\d{8,17}\b`
+     - Tax ID: `\b\d{2}-\d{7}\b`
+   - Method `redact(text: str) -> Tuple[str, Dict[str, int]]`:
+     Replaces matches with `[REDACTED_{TYPE}]` and returns statistics.
+
+2. `app/services/pdf_processor.py`:
+   - Open PDF with `fitz.open(file_path)`.
+   - Iterate through pages:
+     - Extract text with `page.get_text("text")`.
+     - Detect tables via `page.find_tables()`. Convert any detected table matrix into clean Markdown format:
+       `[TABLE EXHIBIT - Page {p}]\n| col1 | col2 |\n| --- | --- |\n| val1 | val2 |`
+     - Concatenate full document text.
+   - Run PII redaction on full text.
+   - Segment sections via regular expression:
+     `r"(?:\n|^)(?:SECTION|ARTICLE|CLAUSE)?\s*(\d+(?:\.\d+)*|[IVXLCDM]+)[\.\:\-\s]+([A-Z][A-Za-z0-9\s\,\-\&\/\(\)]+)(?=\n)"`
+   - Fall back to paragraph blocks if no structured numbered headers match.
+   - Return `(full_raw_text, list_of_sections)`.
+
+================================================================================
+5. CONTEXTUAL RAG & SEMANTIC CHUNKING ENGINE
+================================================================================
+`app/services/rag_engine.py`:
+- Contextual Semantic Chunking:
+  For each section in the contract, if length > 1500 chars, break into logical paragraphs.
+  Prepend a situational contextual header to every chunk:
+  ```
+  [Document: {contract_title} | Section: {sec_num} ({title}) | Page: {page}]
+  Context: This excerpt defines terms and legal obligations governing {title.lower()}.
+  ```
+- Storage:
+  - Initialize ChromaDB `PersistentClient(path=settings.CHROMA_PERSIST_DIR)`.
+  - Upsert chunks into a collection named `f"contract_{contract_id.replace('-', '_')}"`.
+  - Maintain an internal in-memory dictionary cache `self._memory_store[contract_id] = chunks`.
+  - On `query(contract_id, query_text, n_results=4)`:
+    - Attempt ChromaDB vector query.
+    - If ChromaDB fails or is unavailable, run token-frequency relevance scoring over `self._memory_store` and return top chunks.
+  - Implement `delete_contract(contract_id)` to purge collections from ChromaDB and memory.
+
+================================================================================
+6. MULTI-AGENT STATEGRAPH PIPELINE (4 AGENTS)
+================================================================================
+`app/agents/state.py`:
+Define `ContractReviewState(TypedDict)` with:
+- `contract_id`: str
+- `contract_title`: str
+- `raw_text`: str
+- `sections`: List[Dict]
+- `playbook_rules`: List[Dict]
+- `debate_cycle`: int
+- `max_debate_cycles`: int
+- `use_local_llm`: bool
+- `llm_provider`: Optional[str]
+- `model_name`: Optional[str]
+- `api_key_override`: Optional[str]
+- `identified_risks`: List[Dict]
+- `debate_transcript`: List[Dict]
+- `redlines`: List[Dict]
+- `obligations`: List[Dict]
+- `risk_summary`: Dict
+- `overall_score`: float
+- `current_status`: str
+- `error`: Optional[str]
+
+`app/agents/graph.py` Orchestrator:
+Executes sequentially:
+1. `auditor_node`:
+   - Scans sections against 10 risk categories with regex signatures, severity, base score, legal rationale, and suggested mitigation:
+     1. "AI Training & Data Privacy" (CRITICAL, 95.0) -> regex: `(ingest, de-identify|foundational ai models|prompts|model checkpoints|training, tuning|training data|sub-processor)`
+     2. "Indemnification & Baskets" (CRITICAL, 88.0) -> regex: `(indemnif\w+|hold harmless|tipping basket|de minimis threshold|basket)`
+     3. "Representations & Warranties" (CRITICAL, 85.0) -> regex: `(actual knowledge of the chief executive|without any duty of reasonable inquiry|does not warrant.*infringe|freedom to operate)`
+     4. "IP Ownership & Commercialization" (HIGH, 82.0) -> regex: `(jointly by developer and sponsor|without obtaining the consent of, or accounting|grant-back|irrevocably assigns|foreground ip)`
+     5. "Escrow & Operational Covenants" (HIGH, 78.0) -> regex: `(earn-out|unfettered operational discretion|escrow release|technology escrow|working capital statement)`
+     6. "Limitation of Liability & Super-Caps" (HIGH, 75.0) -> regex: `(limitation of liability|aggregate liability|consequential damages|super-cap)`
+     7. "Service Level & Remedies" (HIGH, 72.0) -> regex: `(monthly uptime|service level|service credit|exclusive financial remedy|rto|rpo)`
+     8. "Restrictive Covenants & Non-Compete" (MEDIUM, 65.0) -> regex: `(non-competition|five \(5\) consecutive years|directly or indirectly, anywhere in|non-solicitation)`
+     9. "Termination & Remedies" (MEDIUM, 55.0) -> regex: `(termination|cure period|default|immediate termination)`
+     10. "Governing Law & Dispute Venue" (MEDIUM, 50.0) -> regex: `(substantive laws of switzerland|icc rules of arbitration|geneva, switzerland|courts of london|governing law)`
+   - Prompts the LLM (or falls back) to generate an opening Auditor Statement.
+   - Logs execution latency and token metrics via `token_tracker`.
+
+2. `opposing_node`:
+   - Reviews the top 4 flagged risks.
+   - Prompts the LLM: "You are aggressive Opposing Counsel... defend your client's position, push back against the auditor's claim, and propose a realistic, commercially viable compromise."
+   - Includes deterministic sophisticated legal fallback arguments per category if LLM is offline.
+   - Appends arguments to the `debate_transcript`.
+
+3. `redline_node`:
+   - Synthesizes balanced consensus text for each flagged risk.
+   - Invokes `diff_engine.generate_clause_diff()` to generate word-level diff tokens.
+   - Calculates composite score: `overall_score = round(min(100.0, total_score / max(1, num_risks)), 1)`.
+   - Generates Redline Synthesizer consensus statement for the transcript.
+
+4. `obligation_node`:
+   - Extracts structured contractual obligations across 10 distinct patterns:
+     1. Security Incident Notice (within 24h of trigger, critical)
+     2. Escrow Deposit & Maintenance (quarterly, critical)
+     3. SLA Credit Remittance (monthly, critical)
+     4. Working Capital True-Up (90-day trigger, critical)
+     5. Royalty & Milestone Remittance (quarterly, critical)
+     6. Payment (Net 30, critical)
+     7. Data Destruction & Sanitization (one-time post termination, critical)
+     8. Audit & Compliance (annual SOC 2 / ISO inspection)
+     9. Insurance (maintain $2M - $5M coverage, critical)
+     10. Confidentiality (survives 5 years, critical)
+   - Outputs structured records: `{id, clause_reference, obligor, recipient, obligation_type, description, due_date_or_trigger, recurrence, penalty_for_breach, is_critical}`.
+
+After completing the nodes, commits the final results to the SQLite `contracts` database.
+
+================================================================================
+7. MULTI-PROVIDER LLM GATEWAY & FALLBACK SIMULATOR
+================================================================================
+`app/agents/llm_client.py`:
+Implement async `call_llm(prompt, system_prompt, provider, model_name, use_local, temperature)`:
+- Provider Priority:
+  1. If `use_local` or `provider == 'ollama'`: POST to `http://localhost:11434/api/generate` with model `qwen3.5:4b`.
+  2. If `provider == 'gemini'` or `GEMINI_API_KEY`: Call Google Generative Language API v1beta `gemini-3.5-flash-lite:generateContent`.
+  3. If `provider == 'openai'` or `OPENAI_API_KEY`: Call OpenAI `v1/chat/completions`.
+  4. If `provider == 'anthropic'` or `ANTHROPIC_API_KEY`: Call Anthropic `v1/messages`.
+  5. Fallback: If network fails or keys are absent, return deterministic high-caliber legal responses with latency calculation so the app never crashes.
+
+================================================================================
+8. WORD (.DOCX) OPENXML TRACK CHANGES ENGINE
+================================================================================
+`app/services/diff_engine.py`:
+- Use `difflib.SequenceMatcher` over word arrays.
+- Output array of diff tokens: `{"type": "equal"|"delete"|"insert", "text": "..."}`.
+
+`app/services/export_service.py`:
+- Creates native Word document using `python-docx`.
+- Uses low-level OpenXML (`from docx.oxml import OxmlElement, qn`):
+  - For deletions:
+    Create `<w:del w:id="{id}" w:author="ContractMind Legal AI" w:date="{utc_iso}">`.
+    Inside, create `<w:r>`, `<w:rPr><w:strike/><w:color w:val="DC2626"/></w:rPr>`, and `<w:delText>{text}</w:delText>`.
+    Append to `paragraph._p`.
+  - For insertions:
+    Create `<w:ins w:id="{id}" w:author="ContractMind Legal AI" w:date="{utc_iso}">`.
+    Inside, create `<w:r>`, `<w:rPr><w:u w:val="single"/><w:color w:val="16A34A"/></w:rPr>`, and `<w:t>{text}</w:t>`.
+    Append to `paragraph._p`.
+- Formats executive summary table followed by each clause's original text, revision diff, and legal rationale.
+- Saves file to `settings.EXPORT_DIR` and returns the file path.
+
+================================================================================
+9. MODEL CONTEXT PROTOCOL (MCP) SERVER
+================================================================================
+`app/mcp_server/server.py`:
+- Implement `FastContractMCPServer`:
+  - `list_tools()`:
+    1. `evaluate_clause`: inputs `clause_text` (str), `clause_type` (str).
+    2. `get_playbook_rules`: inputs `playbook_id` (optional str).
+    3. `calculate_risk_matrix`: inputs `flagged_counts` ({critical, high, medium}).
+  - `call_tool(tool_name, arguments)`:
+    - `evaluate_clause`: matches domain-specific risk signals (e.g. "unlimited", "tipping basket", "without accounting", "immediate termination"). Returns `{clause_type, is_compliant, risk_level, flagged_signals, standard_policy, recommended_action}`.
+    - `calculate_risk_matrix`: computes `score = min(100.0, 35*critical + 20*high + 10*medium)` and gives verdict `"REJECT / REDLINE"` or `"APPROVED WITH CAUTION"`.
+- Expose via FastAPI:
+  - `GET /mcp/tools` -> `{"tools": mcp_server.list_tools()}`
+  - `POST /mcp/call` -> `{"result": mcp_server.call_tool(name, args)}`
+
+================================================================================
+10. TOKEN & COST TELEMETRY ENGINE
+================================================================================
+`app/core/token_tracker.py`:
+- Token Estimation: `max(1, len(text) // 4)`.
+- Pricing Table (USD per 1,000 tokens):
+  - `gemini-3.5-flash-lite`: Prompt $0.000075, Completion $0.0003
+  - `gpt-4o`: Prompt $0.005, Completion $0.015
+  - `claude-3-5-sonnet`: Prompt $0.003, Completion $0.015
+  - `deepseek-r1`: Prompt $0.00055, Completion $0.00219
+  - `ollama`: $0.00 / $0.00
+  - `default`: Prompt $0.002, Completion $0.008
+- Method `log_execution(db, contract_id, agent_name, action, prompt_text, completion_text, latency_ms, model_name)`:
+  Computes cost, commits `AuditLog` row to SQLite database, and returns the record.
+
+================================================================================
+11. FASTAPI REST API & STREAMING ENDPOINTS
+================================================================================
+Expose the following endpoints in `backend/app/main.py`:
+- `POST /api/v1/contracts/upload`: Multi-part PDF upload, extracts sections, indexes into ChromaDB, creates contract row.
+- `POST /api/v1/contracts/demo/{sample_type}`: Instant load & auto-analysis of benchmark contracts (`ma`, `cloud_dpa`, `joint_ip`, `msa`, `saas`, `nda`). Accepts `llm_provider`, `model_name`, and `playbook` query params.
+- `GET /api/v1/contracts/`: List all analyzed contracts ordered by `created_at DESC`.
+- `GET /api/v1/contracts/{id}`: Detailed view of contract, risks, transcript, redlines, and obligations.
+- `DELETE /api/v1/contracts/{id}`: Deletes contract row, associated audit logs, and deletes ChromaDB collection.
+- `POST /api/v1/analysis/{id}/trigger`: Triggers orchestrator execution.
+- `GET /api/v1/analysis/{id}/export/docx`: Downloads `.docx` with native Word Track Changes.
+- `GET /api/v1/analysis/audit/summary`: Computes total tokens, total cost USD, average latency ms, and execution breakdown.
+- `DELETE /api/v1/analysis/audit/reset`: Clears all audit log telemetry records.
+- `GET /api/v1/analysis/llm/config`: Checks status of Gemini key, Ollama endpoint, OpenAI key, and Anthropic key.
+- `POST /api/v1/analysis/llm/config`: Allows runtime update of API keys.
+- `GET /health`: Health check JSON (`{"status": "healthy", "version": "1.5.0"}`).
+- `GET /` & `GET /studio`: Serves `backend/static/index.html`.
+
+================================================================================
+12. FRONTEND: ALPINE.JS & TAILWIND NEO-LEGAL STUDIO
+================================================================================
+Implement `backend/static/index.html`:
+- Typography: Plus Jakarta Sans (body, headers), JetBrains Mono (badges, metrics, diff tokens).
+- Color Palette:
+  - Background: `#F4F6FC` with subtle multi-color radial blur gradients.
+  - Brand accents: `#5B67F6`, `#6366F1`.
+  - Pastel card tags: Pink (`#FFF0F3`), Blue (`#EEF6FF`), Amber (`#FFF6EE`), Purple (`#F7EEFD`), Emerald (`#F0FAF2`).
+  - Dark elements: Slate-900 `#1E2238`.
+- Interactive Features:
+  1. Top Navigation Bar:
+     - Hamburger toggle opening slide-out system drawer.
+     - Brand logo with gradient scale icon and `v1.5` badge.
+     - View switcher pills: "Ingestion Studio" vs "Telemetry & Audits".
+     - Live Engine status pill with pulsating ping dot (Green = Online, Amber = Standby) and model label.
+     - Settings avatar modal trigger.
+  2. Starting Instructions Banner:
+     - Prominent dismissible card for first-time users explaining the 3-step workflow: Upload -> Multi-Agent Debate -> Track Changes Word Export.
+  3. Interactive Guided Rundown Tour:
+     - Triggered by floating or header Question Mark button (`?`).
+     - Includes initial pulsating notification bubble: `"Click here for a rundown"`.
+     - When active:
+       - Screen dims with backdrop blur (`fixed inset-0 bg-slate-950/50`).
+       - Targeted element receives `.tour-spotlight-active` with intense pulsing halo:
+         `box-shadow: 0 0 0 11px rgba(91, 103, 246, 0.8), 0 0 70px rgba(91, 103, 246, 0.8)`.
+       - Floating tour dialog advances through 6 steps with Next, Back, and Skip controls:
+         Step 1: Top Navigation & Online Engine Indicator
+         Step 2: Instant Pre-Loaded Benchmark Contracts
+         Step 3: PDF Document Ingestion Dropzone
+         Step 4: Real-time Multi-Agent Cyclic Debate Stream
+         Step 5: Word-Level Redlines & OpenXML Word Export
+         Step 6: Structured Obligations Matrix & Compliance Calendar
+  4. Benchmark Contracts Hub:
+     - 6 one-click cards with preset risk badges:
+       - Cross-Border M&A (Risk: 87, Tipping baskets & IP trap)
+       - Cloud AI & DPA (Risk: 79, Model training on data & SLAs)
+       - AI Joint R&D (Risk: 83, Joint IP without accounting)
+       - Enterprise MSA (Risk: 65, Uncapped indemnity & caps)
+       - SaaS Agreement (Risk: 50, Auto-renewal lock-in)
+       - Mutual NDA (Risk: 25, Standard confidentiality)
+  5. Multi-Agent Debate Feed:
+     - Displays chronological debate turns with distinct agent badges, timestamps, and message cards.
+  6. Redline Synthesizer View:
+     - Word-level insertions rendered as `<span class="diff-ins">` (emerald background, green text, underline).
+     - Word-level deletions rendered as `<span class="diff-del">` (red background, red text, strike-through).
+     - "Export Word Track Changes (.docx)" button triggering direct file download.
+  7. Obligations Matrix:
+     - Tabular layout with columns: Type, Obligor, Recipient, Due Date / Trigger, Recurrence, and Penalty for Breach.
+     - Critical items marked with red alert badges.
+  8. Telemetry & Audits Dashboard:
+     - KPI cards: Total Tokens Processed, Total Cloud Cost USD, Average Node Latency, Active LLM Core.
+     - Execution log table with agent name, prompt/completion tokens, latency, cost, and timestamps.
+     - "Reset Metrics" button with confirmation modal.
+  9. Settings & API Keys Modal:
+     - Inputs for Gemini API Key, OpenAI API Key, Anthropic API Key, and Ollama Base URL.
+     - Radio selector for LLM Provider (Google Gemini, Local Ollama, OpenAI GPT-4o, Anthropic Claude).
+     - Radio selector for Negotiation Playbook (Strict Enterprise, Balanced Commercial, Founder Friendly).
+
+================================================================================
+13. DEPLOYMENT & PRODUCTION ORCHESTRATION
+================================================================================
+1. Local 1-Click Launch:
+   - `run_contractmind.bat`: Checks for Python, installs requirements, executes `python launch.py`.
+   - `launch.py`: Creates required directories, runs DB migration, launches Uvicorn on `0.0.0.0:8000`, redirects logs to `backend/backend.log`, and opens default web browser to `http://localhost:8000`.
+
+2. Vercel Multi-Service Deployment (`vercel.json`):
+   ```json
+   {
+     "$schema": "https://openapi.vercel.sh/vercel.json",
+     "services": {
+       "backend": {
+         "root": "backend",
+         "framework": "fastapi"
+       },
+       "frontend": {
+         "root": "frontend",
+         "framework": "nextjs",
+         "bindings": [
+           {
+             "type": "service",
+             "service": "backend",
+             "format": "url",
+             "env": "BACKEND_URL"
+           }
+         ]
+       }
+     },
+     "rewrites": [
+       { "source": "/api/(.*)", "destination": { "service": "backend" } },
+       { "source": "/health", "destination": { "service": "backend" } },
+       { "source": "/docs", "destination": { "service": "backend" } },
+       { "source": "/openapi.json", "destination": { "service": "backend" } },
+       { "source": "/mcp/(.*)", "destination": { "service": "backend" } },
+       { "source": "/studio", "destination": { "service": "backend" } },
+       { "source": "/static/(.*)", "destination": { "service": "backend" } },
+       { "source": "/(.*)", "destination": { "service": "frontend" } }
+     ]
+   }
+   ```
+3. Frontend Next.js Bridge (`frontend/app/route.ts`):
+   - Implements dynamic GET route handler that reads `frontend/public/index.html` (the identical Alpine.js v1.5 UI) and returns it with `Content-Type: text/html`.
+   - `frontend/next.config.js` redirects `/audit` and `/contracts/*` to `/`, and rewrites `/api/v1/*` to `BACKEND_URL`.
+   - This guarantees that whether deployed on Vercel as a multi-service project, as a standalone Next.js project, or run locally, users always receive the latest ContractMind v1.5 Studio.
+
+================================================================================
+VERIFICATION CHECKLIST
+================================================================================
+Ensure the completed codebase satisfies all criteria:
+1. [x] Zero hardcoded API keys in tracked files (use .env.example).
+2. [x] PyMuPDF table parser generates valid Markdown tables.
+3. [x] PII redactor removes SSNs, credit cards, bank accounts before embedding.
+4. [x] ChromaDB indices are purged on contract deletion.
+5. [x] DOCX export creates genuine OpenXML <w:ins> and <w:del> Track Changes tags that work in Word.
+6. [x] Real measured time.time() latency logged for all agent nodes.
+7. [x] Token pricing correctly applies to Gemini, OpenAI, Claude, and Ollama.
+8. [x] MCP server conforms to JSON-RPC tools schema at /mcp/tools and /mcp/call.
+9. [x] Frontend features 6-step guided tour with glowing halo spotlight and notification bubble.
+10. [x] `npm run build` on frontend completes with zero TypeScript or lint errors.
+```
