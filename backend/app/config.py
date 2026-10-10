@@ -25,10 +25,16 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     
     # Database
-    DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./contractmind.db", validation_alias="DATABASE_URL")
+    DATABASE_URL: str = Field(
+        default="sqlite+aiosqlite:////tmp/contractmind.db" if os.environ.get("VERCEL") else "sqlite+aiosqlite:///./contractmind.db",
+        validation_alias="DATABASE_URL"
+    )
     
     # Vector DB
-    CHROMA_PERSIST_DIR: str = Field(default="./chroma_data", validation_alias="CHROMA_PERSIST_DIR")
+    CHROMA_PERSIST_DIR: str = Field(
+        default="/tmp/chroma_data" if os.environ.get("VERCEL") else "./chroma_data",
+        validation_alias="CHROMA_PERSIST_DIR"
+    )
     
     # LLM Providers
     OPENAI_API_KEY: str = Field(default="", validation_alias="OPENAI_API_KEY")
@@ -39,8 +45,14 @@ class Settings(BaseSettings):
     FALLBACK_MODEL: str = Field(default="deepseek-r1:latest", validation_alias="FALLBACK_MODEL")
     
     # Storage
-    UPLOAD_DIR: str = Field(default="./uploads", validation_alias="UPLOAD_DIR")
-    EXPORT_DIR: str = Field(default="./exports", validation_alias="EXPORT_DIR")
+    UPLOAD_DIR: str = Field(
+        default="/tmp/uploads" if os.environ.get("VERCEL") else "./uploads",
+        validation_alias="UPLOAD_DIR"
+    )
+    EXPORT_DIR: str = Field(
+        default="/tmp/exports" if os.environ.get("VERCEL") else "./exports",
+        validation_alias="EXPORT_DIR"
+    )
     
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = [
@@ -54,6 +66,9 @@ class Settings(BaseSettings):
 settings = Settings()
 
 # Ensure directories exist
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-os.makedirs(settings.EXPORT_DIR, exist_ok=True)
-os.makedirs(settings.CHROMA_PERSIST_DIR, exist_ok=True)
+try:
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    os.makedirs(settings.EXPORT_DIR, exist_ok=True)
+    os.makedirs(settings.CHROMA_PERSIST_DIR, exist_ok=True)
+except Exception:
+    pass

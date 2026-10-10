@@ -1,27 +1,48 @@
 import { ContractDetail, Playbook, AuditSummary, ObligationItem, RedlineChange } from './types';
 
 export function getApiBase(): string {
-  if (typeof window !== 'undefined') {
-    if (process.env.NEXT_PUBLIC_API_URL) {
-      return `${process.env.NEXT_PUBLIC_API_URL}/api/v1`;
+  // Server-side (Next.js server runtime / SSR / Route Handlers)
+  if (typeof window === 'undefined') {
+    if (process.env.BACKEND_URL) {
+      return `${process.env.BACKEND_URL.replace(/\/+$/, '')}/api/v1`;
     }
-    const host = window.location.hostname || '127.0.0.1';
-    return `http://${host}:8000/api/v1`;
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return `${process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '')}/api/v1`;
+    }
+    return 'http://127.0.0.1:8000/api/v1';
   }
-  return process.env.NEXT_PUBLIC_API_URL 
-    ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1` 
-    : 'http://127.0.0.1:8000/api/v1';
+
+  // Client-side in browser
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return `${process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '')}/api/v1`;
+  }
+  // When deployed under a unified domain (e.g. Vercel services rewrite /api/* -> backend),
+  // use same-origin relative path /api/v1
+  if (window.location.port !== '3000') {
+    return '/api/v1';
+  }
+  const host = window.location.hostname || '127.0.0.1';
+  return `http://${host}:8000/api/v1`;
 }
 
 export function getBackendBase(): string {
-  if (typeof window !== 'undefined') {
-    if (process.env.NEXT_PUBLIC_API_URL) {
-      return process.env.NEXT_PUBLIC_API_URL;
+  // Server-side
+  if (typeof window === 'undefined') {
+    if (process.env.BACKEND_URL) {
+      return process.env.BACKEND_URL.replace(/\/+$/, '');
     }
-    const host = window.location.hostname || '127.0.0.1';
-    return `http://${host}:8000`;
+    return (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
   }
-  return process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+
+  // Client-side in browser
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
+  }
+  if (window.location.port !== '3000') {
+    return window.location.origin;
+  }
+  const host = window.location.hostname || '127.0.0.1';
+  return `http://${host}:8000`;
 }
 
 export async function uploadContract(

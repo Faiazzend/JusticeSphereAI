@@ -6,10 +6,15 @@ export function connectDebateStream(
   onComplete?: () => void,
   onError?: (err: any) => void
 ): () => void {
-  const host = typeof window !== 'undefined' ? (window.location.hostname || '127.0.0.1') : '127.0.0.1';
-  const url = process.env.NEXT_PUBLIC_API_URL 
-    ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/stream/${contractId}`
-    : `http://${host}:8000/api/v1/stream/${contractId}`;
+  let url: string;
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    url = `${process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '')}/api/v1/stream/${contractId}`;
+  } else if (typeof window !== 'undefined' && window.location.port !== '3000') {
+    url = `/api/v1/stream/${contractId}`;
+  } else {
+    const host = typeof window !== 'undefined' ? (window.location.hostname || '127.0.0.1') : '127.0.0.1';
+    url = `http://${host}:8000/api/v1/stream/${contractId}`;
+  }
 
   const eventSource = new EventSource(url);
 
