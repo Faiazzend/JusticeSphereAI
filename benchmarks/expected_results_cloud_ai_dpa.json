@@ -1,0 +1,149 @@
+{
+  "contract_metadata": {
+    "title": "Global Enterprise Cloud & AI Infrastructure Services Agreement",
+    "parties": {
+      "provider": "HyperScale Cloud Infrastructure Ltd (Dublin, Ireland)",
+      "customer": "Nexus Financial Services Inc (New York, USA)"
+    },
+    "annual_committed_spend": "$12,400,000 USD",
+    "effective_date": "2026-11-01",
+    "governing_law": "State of New York (Exclusive SDNY Venue)",
+    "benchmark_id": "BENCH-CLOUD-002"
+  },
+  "expected_risk_summary": {
+    "overall_score": 79.0,
+    "risk_rating": "HIGH RISK",
+    "critical_count": 2,
+    "high_count": 2,
+    "medium_count": 2,
+    "low_count": 1,
+    "category_scores": {
+      "Data Privacy & AI Training Rights": 95.0,
+      "Cybersecurity & Breach Notice": 85.0,
+      "Service Level Agreement & Remedies": 75.0,
+      "Limitation of Liability & Super-Caps": 70.0,
+      "Operational Commitments": 60.0
+    }
+  },
+  "flagged_clauses_and_traps": [
+    {
+      "clause_reference": "Section 3.2 (Aggregation and Foundation Training Rights)",
+      "category": "Data Privacy & AI Training Rights",
+      "severity": "CRITICAL",
+      "score": 95.0,
+      "trap_mechanism": "Customer Data Exfiltration / Model Training Trap: Customer grants Provider a perpetual, irrevocable license to de-identify and vectorize prompts and model checkpoints to train Provider's foundational models. In a regulated financial institution, this violates Gramm-Leach-Bliley Act (GLBA), SEC rules, and compromises financial trading algorithms.",
+      "original_text_excerpt": "Customer hereby grants Provider a non-exclusive, perpetual, worldwide, royalty-free license to ingest, de-identify, vectorize, and analyze Customer prompts, telemetry data, and system logs for the purpose of training, tuning, and improving Provider's foundational AI models...",
+      "expected_redline": {
+        "diff_type": "REPLACE",
+        "suggested_text": "Provider shall not access, ingest, monitor, copy, extract, de-identify, or utilize any Customer Data, prompts, model inputs, neural weights, or output artifacts to train, fine-tune, retrain, or improve any foundational AI models, neural classifiers, or algorithms owned by Provider or any third party. Customer Data shall remain Customer's exclusive trade secret.",
+        "legal_rationale": "Completely eliminates Provider's license to train foundational models on Customer financial prompts, eliminating severe IP leakage and GLBA compliance hazards."
+      }
+    },
+    {
+      "clause_reference": "Section 4.3 (Mandatory Security Incident Notification)",
+      "category": "Cybersecurity & Breach Notice",
+      "severity": "CRITICAL",
+      "score": 88.0,
+      "trap_mechanism": "Notification Delay Hazard: While Section 4.3 stipulates 24 hours for notification, it limits the obligation to confirmed/verified incidents. Provider could delay declaring an incident 'confirmed' during early investigation, compromising Customer's strict 72-hour GDPR and SEC Rule 10-K cyber disclosure deadlines.",
+      "original_text_excerpt": "In the event of any confirmed or suspected unauthorized access, alteration, disclosure, or destruction of Customer Data (a 'Security Incident'), Provider shall notify Customer in writing within twenty-four (24) hours of becoming aware of such incident. Provider shall deliver a comprehensive forensic audit report within seventy-two (72) hours.",
+      "expected_redline": {
+        "diff_type": "REPLACE",
+        "suggested_text": "In the event of any confirmed, suspected, or threatened Security Incident affecting Customer Data or Dedicated Clusters, Provider shall notify Customer via telephone and encrypted email immediately, and in no event later than twelve (12) hours following detection. Provider shall provide daily forensic situation updates and a final Root Cause Analysis (RCA) within forty-eight (48) hours.",
+        "legal_rationale": "Shortens notification trigger to 12 hours from detection to ensure Customer meets mandatory SEC 4-day and GDPR 72-hour regulatory notification windows."
+      }
+    },
+    {
+      "clause_reference": "Section 6.2 (Service Level Agreement Sole Remedy Clause)",
+      "category": "Service Level Agreement & Remedies",
+      "severity": "HIGH",
+      "score": 75.0,
+      "trap_mechanism": "Exclusive Remedy Lockout: Section 6.2 states that service credits (capped at 50% of monthly billing) are Customer's 'exclusive financial remedy' for system outages. For a Tier 1 financial institution, an extended compute outage causes millions in lost trading profits that service credits cannot compensate.",
+      "original_text_excerpt": "If Provider fails to meet the SLA Target, Customer's exclusive financial remedy shall be the issuance of service credits applied against the subsequent month's invoice in accordance with the following table...",
+      "expected_redline": {
+        "diff_type": "REPLACE",
+        "suggested_text": "The issuance of service credits shall not constitute Customer's sole or exclusive remedy for persistent or severe outages. If Provider fails to achieve at least 99.50% uptime in any two (2) calendar months within a rolling six (6) month period, Customer may immediately terminate this Agreement for cause, receive a full refund of unearned prepaid fees, and pursue actual direct damages.",
+        "legal_rationale": "Carves out chronic or catastrophic downtime from the exclusive remedy clause, preserving Customer's common law right to terminate and recover actual direct damages."
+      }
+    },
+    {
+      "clause_reference": "Section 7.2 (Super-Cap for Data Protection and Security Breaches)",
+      "category": "Limitation of Liability & Super-Caps",
+      "severity": "HIGH",
+      "score": 72.0,
+      "trap_mechanism": "Super-Cap Insufficiency: The 3x annual fee cap ($37.2M) may be insufficient for a catastrophic financial data breach affecting millions of accounts, where regulatory fines and class actions can easily exceed $100M.",
+      "original_text_excerpt": "Provider's liability arising out of or resulting from: (a) a breach of Section 4 (DPA / Security Incidents); (b) gross negligence or willful misconduct; or (c) third-party IP indemnification obligations under Section 8, shall be subject to a super-cap equal to THREE TIMES (3x) the annual contract value ($37,200,000 USD).",
+      "expected_redline": {
+        "diff_type": "REPLACE",
+        "suggested_text": "Provider's liability arising out of a breach of Section 4 (DPA / Security Breaches) shall be subject to an aggregate super-cap of FIVE TIMES (5x) the annual contract value ($62,000,000 USD). Liability arising from gross negligence, willful misconduct, or third-party IP indemnification shall be completely uncapped and unlimited.",
+        "legal_rationale": "Increases DPA breach super-cap to 5x annual spend ($62M) and removes the cap entirely for gross negligence and IP infringement, aligning with financial institutional standards."
+      }
+    }
+  ],
+  "expected_structured_obligations": [
+    {
+      "id": "obl_cloud_001",
+      "clause_reference": "Section 2.1",
+      "obligor": "Nexus Financial Services Inc (Customer)",
+      "recipient": "HyperScale Cloud Infrastructure Ltd (Provider)",
+      "obligation_type": "Committed Monthly Payment",
+      "description": "Remit monthly advance payment of $1,033,333.33 USD for minimum annual commitment.",
+      "due_date_or_trigger": "Net 30 days from invoice date, monthly in advance",
+      "recurrence": "Monthly",
+      "penalty_for_breach": "1.5% monthly late interest accrual; right to suspend cluster access after 45 days",
+      "is_critical": true
+    },
+    {
+      "id": "obl_cloud_002",
+      "clause_reference": "Section 4.3",
+      "obligor": "HyperScale Cloud Infrastructure Ltd (Provider)",
+      "recipient": "Nexus Financial Services Inc (Customer)",
+      "obligation_type": "Regulatory / Security Breach Notice",
+      "description": "Notify Customer in writing of any confirmed or suspected Security Incident affecting Customer Data.",
+      "due_date_or_trigger": "Within 24 hours of becoming aware (or 12h under redline)",
+      "recurrence": "Upon Trigger",
+      "penalty_for_breach": "Material breach entitling Customer to immediate termination, indemnity claims under 3x/5x super-cap",
+      "is_critical": true
+    },
+    {
+      "id": "obl_cloud_003",
+      "clause_reference": "Section 5.1",
+      "obligor": "HyperScale Cloud Infrastructure Ltd (Provider)",
+      "recipient": "Nexus Financial Services Inc (Customer)",
+      "obligation_type": "Compliance Audit Reporting",
+      "description": "Deliver current SOC 1 Type II, SOC 2 Type II, ISO 27001, and PCI-DSS compliance reports.",
+      "due_date_or_trigger": "Annually on or before contract anniversary date",
+      "recurrence": "Annual",
+      "penalty_for_breach": "Right of Customer to conduct mandatory independent third-party on-site audit at Provider expense",
+      "is_critical": false
+    },
+    {
+      "id": "obl_cloud_004",
+      "clause_reference": "Section 6.2 & Schedule 1",
+      "obligor": "HyperScale Cloud Infrastructure Ltd (Provider)",
+      "recipient": "Nexus Financial Services Inc (Customer)",
+      "obligation_type": "Service Credit Remittance",
+      "description": "Calculate monthly uptime percentage and remit 10% to 50% billing credits if SLA falls below 99.99%.",
+      "due_date_or_trigger": "Within 15 days following the conclusion of each calendar month",
+      "recurrence": "Monthly",
+      "penalty_for_breach": "Immediate termination right if uptime falls below 99.50% in any month",
+      "is_critical": true
+    },
+    {
+      "id": "obl_cloud_005",
+      "clause_reference": "Section 8.3",
+      "obligor": "HyperScale Cloud Infrastructure Ltd (Provider)",
+      "recipient": "Nexus Financial Services Inc (Customer)",
+      "obligation_type": "Secure Data Destruction",
+      "description": "Sanitize and purge all persistent Customer Data per DoD 5220.22-M / NIST SP 800-88 and deliver Certificate of Destruction.",
+      "due_date_or_trigger": "Within 30 days following conclusion of transition assistance",
+      "recurrence": "One-time",
+      "penalty_for_breach": "Breach of confidentiality and DPA super-cap liability",
+      "is_critical": true
+    }
+  ],
+  "expected_debate_consensus": {
+    "auditor_agent_opening": "HIGH RISK: Provider has inserted a dangerous model training clause (Section 3.2) allowing customer prompts and weights to train public foundation models, paired with sole-remedy SLA credit limitations.",
+    "opposing_counsel_counter": "Provider Counsel Defense: Telemetry aggregation is standard cloud practice to tune infrastructure load balancing. Provider accepts strict segregation of prompt tokens provided minimum annual committed spend remains binding.",
+    "synthesizer_consensus": "Consensus Reached: Complete strike-through of foundation model training rights; expedited 12-hour breach notice; expansion of super-cap to $62M (5x ACV); preserved termination rights for chronic SLA defaults."
+  }
+}

@@ -1,0 +1,1925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ContractMind v1.5 - Autonomous Legal AI Redline Studio</title>
+  
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#EEF2FF',
+              100: '#E0E7FF',
+              200: '#C7D2FE',
+              300: '#A5B4FC',
+              400: '#818CF8',
+              500: '#6366F1',
+              600: '#5B67F6',
+              700: '#4338CA',
+              800: '#3730A3',
+              900: '#312E81',
+            },
+            pastel: {
+              pink: '#FF6B8B',
+              pinkLight: '#FFF0F3',
+              blue: '#4D96FF',
+              blueLight: '#EEF6FF',
+              amber: '#FFB26B',
+              amberLight: '#FFF6EE',
+              purple: '#9B51E0',
+              purpleLight: '#F7EEFD',
+              teal: '#6BCB77',
+              tealLight: '#F0FAF2',
+              cyan: '#00C4DF',
+              cyanLight: '#E8FAFD'
+            }
+          },
+          boxShadow: {
+            'soft': '0 12px 32px -6px rgba(91, 103, 246, 0.08), 0 4px 16px -4px rgba(0, 0, 0, 0.04)',
+            'card': '0 16px 40px -8px rgba(112, 128, 176, 0.12), 0 4px 12px -2px rgba(112, 128, 176, 0.05)',
+            'float': '0 20px 48px -10px rgba(91, 103, 246, 0.22), 0 8px 20px -6px rgba(0, 0, 0, 0.08)',
+            'glow': '0 0 24px rgba(91, 103, 246, 0.35)',
+            'inner-soft': 'inset 0 2px 4px rgba(0, 0, 0, 0.03)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js 3.14.3 - Reactive UI Framework (Non-React) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+
+  <style>
+    body {
+      background-color: #F4F6FC;
+      background-image: 
+        radial-gradient(at 10% 10%, rgba(91, 103, 246, 0.07) 0px, transparent 40%),
+        radial-gradient(at 90% 15%, rgba(255, 107, 139, 0.06) 0px, transparent 45%),
+        radial-gradient(at 50% 90%, rgba(155, 81, 224, 0.05) 0px, transparent 50%),
+        radial-gradient(at 80% 85%, rgba(0, 196, 223, 0.06) 0px, transparent 40%);
+      background-attachment: fixed;
+      color: #1E2238;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .card-neo {
+      background: #FFFFFF;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: 28px;
+      box-shadow: 0 14px 36px -8px rgba(112, 128, 176, 0.09), 0 4px 16px -2px rgba(112, 128, 176, 0.04);
+      transition: all 0.25s ease-out;
+    }
+
+    .card-neo:hover {
+      box-shadow: 0 20px 42px -10px rgba(91, 103, 246, 0.14), 0 6px 20px -3px rgba(112, 128, 176, 0.06);
+    }
+
+    .diff-del {
+      background-color: #FEE2E2;
+      color: #DC2626;
+      text-decoration: line-through;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-right: 4px;
+      font-weight: 500;
+    }
+
+    .diff-ins {
+      background-color: #D1FAE5;
+      color: #059669;
+      text-decoration: underline;
+      text-decoration-color: #10B981;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-right: 4px;
+    }
+
+    /* Custom Sleek Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+
+    /* Ultra-Prominent Guided Tour Spotlight Styling */
+    @keyframes tourHaloPulse {
+      0%, 100% {
+        box-shadow: 0 0 0 5px #5B67F6, 0 0 35px rgba(91, 103, 246, 0.55), 0 20px 50px rgba(15, 23, 42, 0.25) !important;
+      }
+      50% {
+        box-shadow: 0 0 0 11px rgba(91, 103, 246, 0.8), 0 0 70px rgba(91, 103, 246, 0.8), 0 30px 65px rgba(15, 23, 42, 0.35) !important;
+      }
+    }
+
+    .tour-spotlight-active {
+      position: relative !important;
+      z-index: 35 !important;
+      background-color: #FFFFFF !important;
+      outline: 3.5px solid #5B67F6 !important;
+      outline-offset: 4px !important;
+      border-radius: 28px !important;
+      animation: tourHaloPulse 2s infinite ease-in-out !important;
+      transform: scale(1.015) !important;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease !important;
+    }
+
+    header.tour-spotlight-active {
+      border-radius: 0 0 24px 24px !important;
+      outline-offset: 0px !important;
+      transform: none !important;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col antialiased selection:bg-brand-600 selection:text-white pb-24"
+      x-data="contractMindApp()" x-init="initApp()">
+
+  <!-- Full-Screen Backdrop Dimming for Guided Tour Spotlight -->
+  <div x-show="rundownActive" x-cloak
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       class="fixed inset-0 z-30 bg-slate-950/50 backdrop-blur-[2px] pointer-events-none transition-all"></div>
+
+  <!-- ================= 1. MODERN TOP BAR ================= -->
+  <header id="tour-header" class="sticky top-0 z-30 w-full bg-[#F4F6FC]/85 backdrop-blur-xl border-b border-slate-200/60 transition-all">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+      
+      <!-- Left: Hamburger Drawer Toggle & Brand Title -->
+      <div class="flex items-center space-x-3.5">
+        <button @click="showDrawer = true" 
+                class="h-11 w-11 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-center text-slate-700 hover:text-brand-600 hover:border-brand-200 transition-all cursor-pointer">
+          <i class="fa-solid fa-bars-staggered text-base"></i>
+        </button>
+
+        <a href="#" @click.prevent="currentView = 'home'" class="flex items-center space-x-3 group">
+          <div class="h-11 w-11 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-purple-500 flex items-center justify-center shadow-md shadow-brand-500/25 group-hover:scale-105 transition-all text-white">
+            <i class="fa-solid fa-scale-balanced text-lg"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-lg font-extrabold tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors">
+                ContractMind
+              </span>
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 border border-brand-200 font-mono">
+                v1.5
+              </span>
+            </div>
+            <p class="text-[11px] font-medium text-slate-500">Autonomous Legal AI Studio &bull; Alpine Core</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Center: Soft Pill View Switcher (Matches 'My Drive' / 'Local Storage' toggle from reference) -->
+      <div class="hidden md:flex items-center bg-white p-1 rounded-2xl border border-slate-200/80 shadow-sm">
+        <button @click="currentView = 'home'"
+                :class="currentView === 'home' ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30 font-semibold' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                class="px-5 py-2 rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-layer-group text-[11px]"></i>
+          <span>Ingestion Studio</span>
+        </button>
+        <button @click="currentView = 'audit'"
+                :class="currentView === 'audit' ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30 font-semibold' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                class="px-5 py-2 rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-chart-pie text-[11px]"></i>
+          <span>Telemetry & Audits</span>
+        </button>
+      </div>
+
+      <!-- Right: AI Engine Pill & Avatar Profile -->
+      <div class="flex items-center space-x-3">
+        <!-- Live Engine Status Badge -->
+        <button @click="openSettingsModal()"
+                class="hidden sm:flex items-center space-x-2 bg-white px-3.5 py-2 rounded-2xl border border-slate-200/80 shadow-sm hover:border-brand-300 transition-all cursor-pointer">
+          <span class="relative flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                  :class="activeModelIsOnline ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5"
+                  :class="activeModelIsOnline ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+          </span>
+          <span class="text-xs font-semibold text-slate-700" x-text="activeModelLabel"></span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+        </button>
+
+        <!-- User / Avatar Badge (inspired by reference image) -->
+        <div class="h-11 w-11 rounded-2xl bg-gradient-to-tr from-amber-400 to-pink-500 p-0.5 shadow-sm cursor-pointer"
+             @click="openSettingsModal()" title="System Configuration">
+          <div class="h-full w-full rounded-[14px] bg-white flex items-center justify-center font-bold text-xs text-slate-800">
+            ⚖️
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= 2. MAIN APPLICATION BODY ================= -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-7">
+
+    <!-- ================= VIEW 1: HOME & INGESTION STUDIO ================= -->
+    <div x-show="currentView === 'home'" x-cloak class="space-y-7">
+
+      <!-- ================= EYE-CATCHING STARTING INSTRUCTIONS FOR NEW PEOPLE ================= -->
+      <div id="tour-quickstart" x-show="showQuickStart" x-transition:enter="transition ease-out duration-300"
+           class="relative overflow-hidden card-neo p-6 sm:p-7 bg-gradient-to-br from-white via-brand-50/40 to-purple-50/30 border-brand-200/80 shadow-card">
+        
+        <!-- Ambient decorative shapes -->
+        <div class="absolute -right-8 -bottom-8 w-40 h-40 bg-brand-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute right-32 -top-12 w-32 h-32 bg-pastel-pink/10 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div class="space-y-2 max-w-xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-600/10 text-brand-600 text-xs font-bold tracking-wide">
+              <i class="fa-solid fa-sparkles text-brand-600"></i>
+              <span>STARTING INSTRUCTIONS &bull; QUICK GUIDE</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+              Welcome to ContractMind v1.5 Studio
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Autonomous legal contract review simulating multi-agent negotiations, playbook compliance checks, and Word Track Changes generation.
+            </p>
+          </div>
+
+          <!-- Dismiss & Demo Action -->
+          <div class="flex items-center gap-2 shrink-0">
+            <button @click="launchDemo('ma')"
+                    class="px-4 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-600/25 transition-all flex items-center gap-2 cursor-pointer">
+              <i class="fa-solid fa-play text-xs"></i>
+              <span>Run Sample Review</span>
+            </button>
+            <button @click="showQuickStart = false"
+                    class="h-10 w-10 rounded-2xl bg-white border border-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all cursor-pointer"
+                    title="Dismiss guide">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3 Visual Steps for New Users (Matches pastel square cards from reference image) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-5 border-t border-slate-200/70">
+          
+          <!-- Step 1 -->
+          <div class="flex items-start space-x-3.5 p-3.5 rounded-2xl bg-white/90 border border-slate-200/60 shadow-sm">
+            <div class="h-11 w-11 rounded-2xl bg-pastel-blueLight text-pastel-blue flex items-center justify-center font-bold text-base shrink-0 shadow-inner">
+              <i class="fa-solid fa-file-arrow-up"></i>
+            </div>
+            <div class="space-y-0.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-pastel-blue">Step 1</span>
+              <h4 class="text-xs font-bold text-slate-900">Ingest Contract</h4>
+              <p class="text-[11px] text-slate-500 leading-normal">
+                Drop your contract PDF or click any of the 6 pre-loaded benchmark contracts.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="flex items-start space-x-3.5 p-3.5 rounded-2xl bg-white/90 border border-slate-200/60 shadow-sm">
+            <div class="h-11 w-11 rounded-2xl bg-pastel-amberLight text-pastel-amber flex items-center justify-center font-bold text-base shrink-0 shadow-inner">
+              <i class="fa-solid fa-microchip"></i>
+            </div>
+            <div class="space-y-0.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-pastel-amber">Step 2</span>
+              <h4 class="text-xs font-bold text-slate-900">Select Active Agent</h4>
+              <p class="text-[11px] text-slate-500 leading-normal">
+                Check the online indicators below to pick Google Gemini or local Ollama.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="flex items-start space-x-3.5 p-3.5 rounded-2xl bg-white/90 border border-slate-200/60 shadow-sm">
+            <div class="h-11 w-11 rounded-2xl bg-pastel-tealLight text-pastel-teal flex items-center justify-center font-bold text-base shrink-0 shadow-inner">
+              <i class="fa-solid fa-comments-dollar"></i>
+            </div>
+            <div class="space-y-0.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-pastel-teal">Step 3</span>
+              <h4 class="text-xs font-bold text-slate-900">Simulate & Export</h4>
+              <p class="text-[11px] text-slate-500 leading-normal">
+                Watch agents debate risks, inspect redlines, and download DOCX Track Changes.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 2-COLUMN HERO METRICS & ENGINE STATUS ================= -->
+      <!-- Directly mirrors the 'Analytics' card with Donut Chart from the reference image! -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left 2 Cols: Agent Engine Live Status & Selector -->
+        <div id="tour-models" class="lg:col-span-2 card-neo p-6 sm:p-7 space-y-5">
+          <div class="flex items-center justify-between pb-1 border-b border-slate-100">
+            <div>
+              <h3 class="text-base font-extrabold text-slate-900">AI Agent Models & Online Status</h3>
+              <p class="text-xs text-slate-500">Select active inference provider &bull; Real-time network telemetry</p>
+            </div>
+            <button @click="openSettingsModal()" 
+                    class="text-xs text-brand-600 hover:text-brand-700 font-bold flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-gear"></i>
+              <span>API Keys</span>
+            </button>
+          </div>
+
+          <!-- 4 Engine Cards with Live Online Badges -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            
+            <!-- 1. Google Gemini (Active Cloud Core) -->
+            <div @click="selectedProvider = 'gemini'"
+                 :class="selectedProvider === 'gemini' ? 'border-brand-500 bg-brand-50/50 ring-2 ring-brand-500/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
+                 class="p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-3">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="h-10 w-10 rounded-2xl bg-pastel-blueLight text-brand-600 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-sparkles"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-slate-900">Gemini 3.5 Flash Lite</h4>
+                    <p class="text-[10px] text-slate-500 font-mono">Google Cloud AI</p>
+                  </div>
+                </div>
+
+                <!-- Online Status Pill -->
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono"
+                      :class="llmStatus.gemini_configured ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'">
+                  <span class="h-1.5 w-1.5 rounded-full" :class="llmStatus.gemini_configured ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                  <span x-text="llmStatus.gemini_configured ? 'ONLINE & READY' : 'NEEDS KEY'"></span>
+                </span>
+              </div>
+
+              <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                <span>Latency: <strong>&lt; 1.5s</strong></span>
+                <span class="font-bold text-brand-600" x-show="selectedProvider === 'gemini'">Active Core &#10003;</span>
+              </div>
+            </div>
+
+            <!-- 2. Local Ollama (Local GPU Core) -->
+            <div @click="selectedProvider = 'ollama'"
+                 :class="selectedProvider === 'ollama' ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
+                 class="p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-3">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="h-10 w-10 rounded-2xl bg-pastel-amberLight text-pastel-amber flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-microchip"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-slate-900">Local Ollama Runtime</h4>
+                    <p class="text-[10px] text-slate-500 font-mono" x-text="ollamaActiveModelName"></p>
+                  </div>
+                </div>
+
+                <!-- Online Status Pill -->
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono"
+                      :class="llmStatus.ollama_available ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'">
+                  <span class="h-1.5 w-1.5 rounded-full" :class="llmStatus.ollama_available ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                  <span x-text="llmStatus.ollama_available ? (llmStatus.ollama_models?.length ? 'ONLINE (' + llmStatus.ollama_models[0] + ')' : 'ONLINE (0 Models)') : 'OFFLINE'"></span>
+                </span>
+              </div>
+
+              <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                <span>Host: <strong>localhost:11434</strong></span>
+                <span class="font-bold text-amber-600" x-show="selectedProvider === 'ollama'">Active Core &#10003;</span>
+              </div>
+            </div>
+
+            <!-- 3. OpenAI Codex / GPT-4o -->
+            <div @click="selectedProvider = 'openai'"
+                 :class="selectedProvider === 'openai' ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
+                 class="p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-3">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="h-10 w-10 rounded-2xl bg-pastel-tealLight text-pastel-teal flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-brain"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-slate-900">OpenAI GPT-4o</h4>
+                    <p class="text-[10px] text-slate-500 font-mono">OpenAI Codex Platform</p>
+                  </div>
+                </div>
+
+                <!-- Online Status Pill -->
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono"
+                      :class="llmStatus.openai_configured ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'">
+                  <span class="h-1.5 w-1.5 rounded-full" :class="llmStatus.openai_configured ? 'bg-emerald-500' : 'bg-slate-400'"></span>
+                  <span x-text="llmStatus.openai_configured ? 'ONLINE' : 'KEY REQUIRED'"></span>
+                </span>
+              </div>
+
+              <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                <span>Model: <strong>gpt-4o</strong></span>
+                <span class="font-bold text-emerald-600" x-show="selectedProvider === 'openai'">Active Core &#10003;</span>
+              </div>
+            </div>
+
+            <!-- 4. Anthropic Claude 3.5 Sonnet -->
+            <div @click="selectedProvider = 'anthropic'"
+                 :class="selectedProvider === 'anthropic' ? 'border-purple-500 bg-purple-50/50 ring-2 ring-purple-500/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
+                 class="p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-3">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="h-10 w-10 rounded-2xl bg-pastel-purpleLight text-pastel-purple flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-network-wired"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-slate-900">Claude 3.5 Sonnet</h4>
+                    <p class="text-[10px] text-slate-500 font-mono">Anthropic AI</p>
+                  </div>
+                </div>
+
+                <!-- Online Status Pill -->
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono"
+                      :class="llmStatus.anthropic_configured ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'">
+                  <span class="h-1.5 w-1.5 rounded-full" :class="llmStatus.anthropic_configured ? 'bg-emerald-500' : 'bg-slate-400'"></span>
+                  <span x-text="llmStatus.anthropic_configured ? 'ONLINE' : 'KEY REQUIRED'"></span>
+                </span>
+              </div>
+
+              <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                <span>Model: <strong>claude-3-5</strong></span>
+                <span class="font-bold text-purple-600" x-show="selectedProvider === 'anthropic'">Active Core &#10003;</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right 1 Col: Donut Meter & Analytics Card (Directly from reference screenshot!) -->
+        <div id="tour-analytics" class="card-neo p-6 sm:p-7 flex flex-col justify-between space-y-4">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h3 class="text-base font-extrabold text-slate-900">Engine Analytics</h3>
+            <span class="text-xs font-mono font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">v1.5</span>
+          </div>
+
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="text-xs font-semibold text-slate-500">Processed Contracts</p>
+              <h4 class="text-2xl font-extrabold text-slate-900 mt-0.5" x-text="contracts.length + ' Docs'"></h4>
+              <p class="text-[11px] text-slate-400 mt-1" x-text="metrics.total_tokens_consumed.toLocaleString() + ' tokens analyzed'"></p>
+            </div>
+
+            <!-- Donut Progress Ring (Matches the pink/blue donut in the screenshot) -->
+            <div class="relative h-20 w-20 flex items-center justify-center shrink-0">
+              <svg class="h-full w-full -rotate-90" viewBox="0 0 36 36">
+                <!-- Track -->
+                <path class="text-slate-100" stroke-width="3.8" stroke="currentColor" fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <!-- Active Arc -->
+                <path class="text-brand-600" stroke-width="3.8" stroke-dasharray="85, 100" stroke-linecap="round" stroke="currentColor" fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              <div class="absolute flex flex-col items-center justify-center text-center">
+                <span class="text-xs font-extrabold text-slate-900">85%</span>
+                <span class="text-[8px] font-bold text-slate-400 uppercase">Coverage</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Metric Bar -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs font-mono">
+            <div>
+              <span class="text-slate-400 block text-[10px]">Avg Latency</span>
+              <span class="font-bold text-slate-800" x-text="(metrics.average_latency_ms || 1200).toFixed(0) + ' ms'"></span>
+            </div>
+            <div>
+              <span class="text-slate-400 block text-[10px]">Model Cost</span>
+              <span class="font-bold text-emerald-600" x-text="'$' + (metrics.total_cost_usd || 0).toFixed(4)"></span>
+            </div>
+            <div>
+              <span class="text-slate-400 block text-[10px]">Agents</span>
+              <span class="font-bold text-brand-600">3 Cyclic</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 3. UPLOAD DROPZONE & NEGOTIATION PLAYBOOK ================= -->
+      <div id="tour-ingestion" class="card-neo p-7 space-y-6">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">Ingest Contract File</h3>
+            <p class="text-xs text-slate-500">Upload agreement PDF or configure negotiation playbook</p>
+          </div>
+          <span class="text-xs font-mono text-slate-400">PDF Format &bull; Max 25MB</span>
+        </div>
+
+        <!-- Sleek Dropzone -->
+        <div class="border-2 border-dashed border-slate-200 hover:border-brand-500 hover:bg-brand-50/20 rounded-3xl p-8 text-center cursor-pointer transition-all relative"
+             @dragover.prevent="isDragging = true"
+             @dragleave.prevent="isDragging = false"
+             @drop.prevent="handleFileDrop($event)"
+             @click="$refs.fileInput.click()">
+          
+          <input type="file" x-ref="fileInput" accept=".pdf" class="hidden" @change="handleFileSelect($event)">
+
+          <div class="flex flex-col items-center justify-center space-y-3">
+            <div class="h-16 w-16 rounded-3xl bg-brand-50 text-brand-600 flex items-center justify-center text-2xl shadow-sm">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <div>
+              <h4 class="text-base font-extrabold text-slate-800" x-text="selectedFile ? selectedFile.name : 'Drop contract PDF here, or click to browse'"></h4>
+              <p class="text-xs text-slate-500 mt-0.5">Compatible with M&A agreements, Master Services Agreements, DPAs, and NDAs</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ingestion Form (when file is picked) -->
+        <div x-show="selectedFile && !uploading" x-transition class="space-y-4 pt-2">
+          <div>
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1.5">
+              Contract Title / Identification
+            </label>
+            <input type="text" x-model="contractTitle"
+                   placeholder="e.g. Acme Global Master Services Agreement 2026"
+                   class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-brand-500 focus:bg-white transition-all font-medium">
+          </div>
+
+          <!-- Playbook Selector Pills -->
+          <div class="space-y-2">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+              Negotiation Playbook Strategy
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <template x-for="pb in playbooks" :key="pb.id">
+                <div @click="selectedPlaybook = pb.id"
+                     :class="selectedPlaybook === pb.id ? 'border-brand-500 bg-brand-50/60 ring-2 ring-brand-500/20' : 'border-slate-200 bg-white hover:border-slate-300'"
+                     class="p-3.5 rounded-2xl border cursor-pointer transition-all">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-bold text-slate-800" x-text="pb.name"></span>
+                    <span class="text-[9px] px-2 py-0.5 rounded-full font-mono font-bold"
+                          :class="pb.risk === 'Low' ? 'bg-blue-100 text-blue-700' : pb.risk === 'High' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'"
+                          x-text="pb.risk + ' Risk'"></span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 truncate" x-text="pb.desc"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Run Multi-Agent Button -->
+          <button @click="uploadAndAnalyze()"
+                  class="w-full h-12 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30 transition-all cursor-pointer">
+            <span>Ingest Contract & Run 3-Agent Review</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Live Step Progress Stepper -->
+        <div x-show="uploading" x-transition class="p-6 rounded-2xl bg-brand-50/50 border border-brand-200 space-y-4">
+          <div class="flex items-center space-x-3 text-brand-600 font-extrabold text-sm">
+            <i class="fa-solid fa-circle-notch fa-spin text-base"></i>
+            <span>Autonomous Multi-Agent Synthesis in Progress...</span>
+          </div>
+
+          <div class="space-y-2.5">
+            <template x-for="(step, idx) in steps" :key="idx">
+              <div class="flex items-center space-x-3 text-xs">
+                <i class="fa-solid fa-circle-check text-emerald-500 text-sm" x-show="idx < currentStep"></i>
+                <span class="h-2.5 w-2.5 rounded-full bg-brand-600 animate-ping" x-show="idx === currentStep"></span>
+                <span class="h-2 w-2 rounded-full bg-slate-300" x-show="idx > currentStep"></span>
+                <span :class="idx === currentStep ? 'text-slate-900 font-extrabold' : idx < currentStep ? 'text-slate-400 line-through' : 'text-slate-500'"
+                      x-text="step"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 4. 6-GRID PRE-LOADED TEST CONTRACTS ================= -->
+      <!-- Directly mirrors the 6-icon grid from the right pane of the reference image! -->
+      <div id="tour-benchmarks" class="card-neo p-6 sm:p-7 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-cubes-stacked text-brand-600"></i>
+              Pre-loaded Test Contracts
+            </h3>
+            <p class="text-xs text-slate-500">1-click benchmark evaluation datasets across corporate deal structures</p>
+          </div>
+          <span class="text-xs font-mono font-bold text-slate-400">Click any card to run</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+          
+          <!-- 1. M&A -->
+          <div @click="launchDemo('ma')"
+               class="card-neo p-4 text-center hover:border-red-300 hover:-translate-y-1 transition-all cursor-pointer group flex flex-col items-center justify-between space-y-2.5">
+            <div class="h-12 w-12 rounded-2xl bg-pastel-pinkLight text-pastel-pink flex items-center justify-center text-xl shadow-sm group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-handshake"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-extrabold text-slate-900 truncate">Tech M&A</h4>
+              <p class="text-[10px] text-slate-500">Tipping baskets</p>
+            </div>
+            <span class="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">Risk: 87</span>
+          </div>
+
+          <!-- 2. Cloud DPA -->
+          <div @click="launchDemo('cloud_dpa')"
+               class="card-neo p-4 text-center hover:border-indigo-300 hover:-translate-y-1 transition-all cursor-pointer group flex flex-col items-center justify-between space-y-2.5">
+            <div class="h-12 w-12 rounded-2xl bg-pastel-blueLight text-pastel-blue flex items-center justify-center text-xl shadow-sm group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-cloud-lock"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-extrabold text-slate-900 truncate">Cloud AI DPA</h4>
+              <p class="text-[10px] text-slate-500">Training rights</p>
+            </div>
+            <span class="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200">Risk: 79</span>
+          </div>
+
+          <!-- 3. Joint IP -->
+          <div @click="launchDemo('joint_ip')"
+               class="card-neo p-4 text-center hover:border-purple-300 hover:-translate-y-1 transition-all cursor-pointer group flex flex-col items-center justify-between space-y-2.5">
+            <div class="h-12 w-12 rounded-2xl bg-pastel-purpleLight text-pastel-purple flex items-center justify-center text-xl shadow-sm group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-extrabold text-slate-900 truncate">Joint IP R&D</h4>
+              <p class="text-[10px] text-slate-500">No accounting</p>
+            </div>
+            <span class="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-200">Risk: 83</span>
+          </div>
+
+          <!-- 4. Enterprise MSA -->
+          <div @click="launchDemo('msa')"
+               class="card-neo p-4 text-center hover:border-amber-300 hover:-translate-y-1 transition-all cursor-pointer group flex flex-col items-center justify-between space-y-2.5">
+            <div class="h-12 w-12 rounded-2xl bg-pastel-amberLight text-pastel-amber flex items-center justify-center text-xl shadow-sm group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-file-contract"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-extrabold text-slate-900 truncate">Enterprise MSA</h4>
+              <p class="text-[10px] text-slate-500">Indemnity caps</p>
+            </div>
+            <span class="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Risk: 65</span>
+          </div>
+
+          <!-- 5. SaaS Agreement -->
+          <div @click="launchDemo('saas')"
+               class="card-neo p-4 text-center hover:border-cyan-300 hover:-translate-y-1 transition-all cursor-pointer group flex flex-col items-center justify-between space-y-2.5">
+            <div class="h-12 w-12 rounded-2xl bg-pastel-cyanLight text-pastel-cyan flex items-center justify-center text-xl shadow-sm group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-server"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-extrabold text-slate-900 truncate">SaaS License</h4>
+              <p class="text-[10px] text-slate-500">Auto-renewal</p>
+            </div>
+            <span class="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200">Risk: 50</span>
+          </div>
+
+          <!-- 6. Mutual NDA -->
+          <div @click="launchDemo('nda')"
+               class="card-neo p-4 text-center hover:border-emerald-300 hover:-translate-y-1 transition-all cursor-pointer group flex flex-col items-center justify-between space-y-2.5">
+            <div class="h-12 w-12 rounded-2xl bg-pastel-tealLight text-pastel-teal flex items-center justify-center text-xl shadow-sm group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-extrabold text-slate-900 truncate">Mutual NDA</h4>
+              <p class="text-[10px] text-slate-500">Standard trade</p>
+            </div>
+            <span class="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Risk: 25</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 5. RECENT CONTRACTS LIST ================= -->
+      <!-- Mirrors the 'Most used files' list from the reference image! -->
+      <div id="tour-documents" class="card-neo p-7 space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">Analyzed Contract Documents</h3>
+            <p class="text-xs text-slate-500">Click any document to inspect consensus redlines & obligations</p>
+          </div>
+          <span class="text-xs font-mono font-bold text-slate-400" x-text="contracts.length + ' Total'"></span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <template x-for="c in contracts" :key="c.id">
+            <div @click="openContract(c.id)"
+                 class="p-4 rounded-2xl bg-white border border-slate-200 hover:border-brand-300 hover:shadow-soft transition-all cursor-pointer flex items-center justify-between group">
+              <div class="flex items-center space-x-3.5 truncate">
+                <div class="h-11 w-11 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg shrink-0 group-hover:scale-105 transition-transform">
+                  <i class="fa-regular fa-file-lines"></i>
+                </div>
+                <div class="truncate">
+                  <h4 class="text-xs font-extrabold text-slate-900 group-hover:text-brand-600 transition-colors truncate" x-text="c.title"></h4>
+                  <div class="flex items-center space-x-2 text-[10px] text-slate-400 mt-0.5 font-mono">
+                    <span class="truncate" x-text="c.playbook_name"></span>
+                    <span>&bull;</span>
+                    <span x-text="new Date(c.created_at).toLocaleDateString()"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-2.5 shrink-0 pl-3">
+                <span class="text-[11px] font-mono font-bold px-2.5 py-1 rounded-full"
+                      :class="c.overall_risk_score >= 70 ? 'bg-red-50 text-red-600 border border-red-200' : c.overall_risk_score >= 40 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
+                      x-text="'Risk: ' + c.overall_risk_score"></span>
+                <button @click.stop="deleteContract(c.id)"
+                        class="h-8 w-8 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all cursor-pointer"
+                        title="Delete Contract">
+                  <i class="fa-regular fa-trash-can text-xs"></i>
+                </button>
+                <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:text-brand-600 group-hover:translate-x-0.5 transition-all"></i>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= VIEW 2: INTERACTIVE CONTRACT STUDIO ================= -->
+    <div x-show="currentView === 'studio' && activeContract" x-cloak class="space-y-6">
+      
+      <!-- Studio Header Bar -->
+      <div class="card-neo p-6 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-4 truncate">
+          <button @click="currentView = 'home'"
+                  class="h-11 w-11 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-all cursor-pointer">
+            <i class="fa-solid fa-arrow-left text-sm"></i>
+          </button>
+          <div class="truncate">
+            <div class="flex items-center gap-2">
+              <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 truncate" x-text="activeContract?.title"></h2>
+              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-600 font-bold border border-brand-200"
+                    x-text="activeContract?.playbook_name"></span>
+            </div>
+            <p class="text-xs text-slate-400 font-mono mt-0.5">
+              File: <span x-text="activeContract?.original_filename"></span> &bull; ID: <span x-text="activeContract?.id?.slice(0, 8)"></span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <!-- Risk Score Pill -->
+          <div class="flex items-center space-x-2 text-xs font-mono bg-slate-50 px-4 py-2 rounded-2xl border border-slate-200">
+            <span class="text-slate-500">Risk Severity:</span>
+            <span class="font-extrabold text-base"
+                  :class="activeContract?.overall_risk_score >= 70 ? 'text-red-600' : activeContract?.overall_risk_score >= 40 ? 'text-amber-600' : 'text-emerald-600'"
+                  x-text="activeContract?.overall_risk_score + '/100'"></span>
+          </div>
+
+          <!-- DOCX Export Button -->
+          <a :href="'/api/v1/analysis/' + activeContract?.id + '/export/docx'"
+             class="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/25 transition-all cursor-pointer">
+            <i class="fa-solid fa-file-word text-sm"></i>
+            <span>Export Track Changes (.DOCX)</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Studio Tab Navigation -->
+      <div class="flex items-center space-x-2 border-b border-slate-200 pb-3">
+        <button @click="studioTab = 'redlines'"
+                :class="studioTab === 'redlines' ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30 font-bold' : 'text-slate-600 hover:text-slate-900 bg-white border border-slate-200'"
+                class="px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-scale-balanced"></i>
+          <span>Consensus Redlines (<span x-text="activeContract?.redlines?.length || 0"></span>)</span>
+        </button>
+
+        <button @click="studioTab = 'debate'"
+                :class="studioTab === 'debate' ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30 font-bold' : 'text-slate-600 hover:text-slate-900 bg-white border border-slate-200'"
+                class="px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-comments"></i>
+          <span>Multi-Agent Debate (<span x-text="activeContract?.debate_transcript?.length || 0"></span>)</span>
+        </button>
+
+        <button @click="studioTab = 'obligations'"
+                :class="studioTab === 'obligations' ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30 font-bold' : 'text-slate-600 hover:text-slate-900 bg-white border border-slate-200'"
+                class="px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center gap-2 cursor-pointer">
+          <i class="fa-regular fa-calendar-check"></i>
+          <span>Obligations Matrix (<span x-text="activeContract?.obligations?.length || 0"></span>)</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: Interactive Redlines with Diff Highlights -->
+      <div x-show="studioTab === 'redlines'" class="space-y-4">
+        <template x-for="rl in activeContract?.redlines" :key="rl.id">
+          <div class="card-neo p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-xs font-mono font-bold text-slate-800" x-text="'Section ' + rl.section_number"></span>
+                <span class="text-[10px] font-mono px-2.5 py-0.5 rounded-full font-bold"
+                      :class="rl.risk_severity === 'CRITICAL' ? 'bg-red-50 text-red-600 border border-red-200' : rl.risk_severity === 'HIGH' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-blue-50 text-blue-700 border border-blue-200'"
+                      x-text="rl.risk_severity"></span>
+              </div>
+              <span class="text-xs text-slate-500 italic max-w-lg truncate" x-text="rl.legal_rationale"></span>
+            </div>
+
+            <!-- Diff Content View -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 font-mono text-xs leading-relaxed text-slate-800">
+              <template x-if="rl.diff_tokens && rl.diff_tokens.length">
+                <div>
+                  <template x-for="(tok, i) in rl.diff_tokens" :key="i">
+                    <span>
+                      <span x-show="tok.type === 'delete'" class="diff-del" x-text="tok.text"></span>
+                      <span x-show="tok.type === 'insert'" class="diff-ins" x-text="tok.text"></span>
+                      <span x-show="tok.type === 'equal'" class="text-slate-700 mr-1" x-text="tok.text"></span>
+                    </span>
+                  </template>
+                </div>
+              </template>
+              <template x-if="!rl.diff_tokens || !rl.diff_tokens.length">
+                <div>
+                  <p class="diff-del block mb-2" x-text="rl.original_text"></p>
+                  <p class="diff-ins block" x-text="rl.suggested_text"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Tab 2: Live Multi-Agent Debate Transcript -->
+      <div x-show="studioTab === 'debate'" class="card-neo p-6 space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <span class="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-terminal text-brand-600"></i>
+            Cyclic StateGraph Negotiation Log
+          </span>
+          <span class="text-xs font-mono font-bold text-emerald-600 flex items-center gap-1">
+            <i class="fa-solid fa-circle-check"></i> Consensus Achieved
+          </span>
+        </div>
+
+        <div class="space-y-3.5 max-h-[600px] overflow-y-auto pr-2">
+          <template x-for="(turn, idx) in activeContract?.debate_transcript" :key="idx">
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="text-[10px] text-slate-400 font-mono" x-text="'#' + (idx + 1)"></span>
+                  <span class="text-xs font-bold px-2.5 py-0.5 rounded-full font-mono"
+                        :class="turn.agent_name.includes('Auditor') ? 'bg-red-100 text-red-700' : turn.agent_name.includes('Opposing') ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-700'"
+                        x-text="turn.agent_name"></span>
+                </div>
+                <span class="text-[10px] text-slate-500 font-mono px-2 py-0.5 rounded-full bg-white border border-slate-200"
+                      x-text="'Target: ' + turn.target_clause"></span>
+              </div>
+              <p class="text-slate-800 text-xs leading-relaxed" x-text="turn.content"></p>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Tab 3: Structured Obligations Matrix -->
+      <div x-show="studioTab === 'obligations'" class="card-neo overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-mono tracking-wider text-[11px]">
+            <tr>
+              <th class="px-5 py-4">Citation</th>
+              <th class="px-5 py-4">Category</th>
+              <th class="px-5 py-4">Obligor</th>
+              <th class="px-5 py-4">Obligation Description</th>
+              <th class="px-5 py-4">Trigger / Due Date</th>
+              <th class="px-5 py-4">Penalty</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <template x-for="obl in activeContract?.obligations" :key="obl.id">
+              <tr class="hover:bg-brand-50/30 transition-colors">
+                <td class="px-5 py-4 font-mono font-bold text-brand-600 whitespace-nowrap" x-text="obl.clause_reference"></td>
+                <td class="px-5 py-4 font-semibold text-slate-800 whitespace-nowrap" x-text="obl.obligation_type"></td>
+                <td class="px-5 py-4 whitespace-nowrap">
+                  <span class="px-2.5 py-1 rounded-full bg-slate-100 font-mono text-[11px] text-slate-700" x-text="obl.obligor"></span>
+                </td>
+                <td class="px-5 py-4 text-slate-600 max-w-xs leading-relaxed" x-text="obl.description"></td>
+                <td class="px-5 py-4 text-amber-600 font-mono font-bold text-[11px] whitespace-nowrap" x-text="obl.due_date_or_trigger"></td>
+                <td class="px-5 py-4 text-slate-500 text-[11px]" x-text="obl.penalty_for_breach"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ================= VIEW 3: TELEMETRY & AUDIT DASHBOARD ================= -->
+    <div x-show="currentView === 'audit'" x-cloak class="space-y-6">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+        <div>
+          <h2 class="text-xl font-extrabold text-slate-900">Execution Telemetry & Audit Logs</h2>
+          <p class="text-xs text-slate-500">Real-time token utilization, cost estimation, and agent invocation audit trail</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button @click="resetMetrics()" 
+                  class="px-4 py-2 rounded-2xl bg-white border border-rose-200 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-1.5 cursor-pointer shadow-sm">
+            <i class="fa-regular fa-trash-can text-xs"></i> Reset Metrics
+          </button>
+          <button @click="fetchMetrics()" 
+                  class="px-4 py-2 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1.5 cursor-pointer shadow-sm">
+            <i class="fa-solid fa-arrows-rotate text-xs"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="card-neo p-5 space-y-1">
+          <span class="text-xs text-slate-500 font-semibold">Total Invocations</span>
+          <h4 class="text-2xl font-extrabold font-mono text-slate-900" x-text="metrics.total_executions || 0"></h4>
+        </div>
+        <div class="card-neo p-5 space-y-1">
+          <span class="text-xs text-slate-500 font-semibold">Tokens Processed</span>
+          <h4 class="text-2xl font-extrabold font-mono text-brand-600" x-text="(metrics.total_tokens_consumed || 0).toLocaleString()"></h4>
+        </div>
+        <div class="card-neo p-5 space-y-1">
+          <span class="text-xs text-slate-500 font-semibold">Estimated Cost (USD)</span>
+          <h4 class="text-2xl font-extrabold font-mono text-emerald-600" x-text="'$' + (metrics.total_cost_usd || 0).toFixed(4)"></h4>
+        </div>
+        <div class="card-neo p-5 space-y-1">
+          <span class="text-xs text-slate-500 font-semibold">Avg Agent Latency</span>
+          <h4 class="text-2xl font-extrabold font-mono text-purple-600" x-text="(metrics.average_latency_ms || 0).toFixed(1) + 'ms'"></h4>
+        </div>
+      </div>
+
+      <!-- Execution Log Table -->
+      <div class="card-neo overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-mono tracking-wider text-[11px]">
+            <tr>
+              <th class="px-5 py-4">Agent</th>
+              <th class="px-5 py-4">Action</th>
+              <th class="px-5 py-4">Model</th>
+              <th class="px-5 py-4">Tokens</th>
+              <th class="px-5 py-4">Latency</th>
+              <th class="px-5 py-4">Cost</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 font-mono">
+            <template x-for="log in metrics.recent_logs" :key="log.id">
+              <tr class="hover:bg-brand-50/20">
+                <td class="px-5 py-3.5 font-bold text-slate-900" x-text="log.agent_name"></td>
+                <td class="px-5 py-3.5 text-slate-600" x-text="log.action"></td>
+                <td class="px-5 py-3.5 text-brand-600 font-semibold" x-text="log.model_name"></td>
+                <td class="px-5 py-3.5 text-slate-700" x-text="log.total_tokens"></td>
+                <td class="px-5 py-3.5 text-slate-500" x-text="log.latency_ms.toFixed(1) + 'ms'"></td>
+                <td class="px-5 py-3.5 text-emerald-600 font-bold" x-text="'$' + log.cost_usd.toFixed(4)"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= 3. FLOATING BOTTOM NAVIGATION DOCK ================= -->
+  <!-- Directly mirrors the floating bottom bar with FAB from the reference screenshot! -->
+  <div class="fixed bottom-5 inset-x-0 z-30 flex justify-center pointer-events-none">
+    <div class="pointer-events-auto bg-white/95 backdrop-blur-xl border border-slate-200/80 px-6 py-2.5 rounded-full shadow-float flex items-center space-x-6 sm:space-x-8">
+      
+      <!-- Home Icon -->
+      <button @click="currentView = 'home'"
+              :class="currentView === 'home' ? 'text-brand-600 scale-110' : 'text-slate-400 hover:text-slate-700'"
+              class="transition-all text-lg cursor-pointer p-1" title="Ingestion Studio">
+        <i class="fa-solid fa-shapes"></i>
+      </button>
+
+      <!-- Analytics Icon -->
+      <button @click="currentView = 'audit'"
+              :class="currentView === 'audit' ? 'text-brand-600 scale-110' : 'text-slate-400 hover:text-slate-700'"
+              class="transition-all text-lg cursor-pointer p-1" title="Telemetry & Audits">
+        <i class="fa-solid fa-chart-line"></i>
+      </button>
+
+      <!-- Center Floating Action Button (FAB) for Instant Upload / Demo -->
+      <button @click="$refs.fileInput ? $refs.fileInput.click() : null"
+              class="h-12 w-12 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-500 text-white flex items-center justify-center text-lg shadow-glow hover:scale-110 active:scale-95 transition-all cursor-pointer -my-3">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+      </button>
+
+      <!-- Question Mark with Notification Bubble -->
+      <div class="relative flex items-center justify-center">
+        <!-- Notification Bubble on First Visit -->
+        <div x-show="showRundownBubble" x-transition:enter="transition ease-out duration-300" x-transition:leave="transition ease-in duration-200"
+             class="absolute -top-14 left-1/2 -translate-x-1/2 z-40 cursor-pointer pointer-events-auto"
+             @click="startAutoRundown()">
+          <div class="relative bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs py-1.5 px-3 rounded-2xl shadow-float flex items-center gap-1.5 whitespace-nowrap animate-bounce transition-all">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+            </span>
+            <span>Click here for a rundown</span>
+            <button @click.stop="dismissBubble()" class="ml-1 text-white/70 hover:text-white p-0.5 rounded-full" title="Dismiss">
+              <i class="fa-solid fa-xmark text-[10px]"></i>
+            </button>
+            <!-- Downward Arrow Pointer -->
+            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-brand-600 rotate-45"></div>
+          </div>
+        </div>
+
+        <!-- Question Mark Button -->
+        <button @click="toggleRundown()"
+                :class="rundownActive ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30' : 'text-slate-400 hover:text-brand-600'"
+                class="h-9 w-9 rounded-full flex items-center justify-center transition-all text-lg cursor-pointer p-1 relative"
+                title="Automatic Webpage Rundown">
+          <i class="fa-solid fa-circle-question"></i>
+        </button>
+      </div>
+
+      <!-- Settings Icon -->
+      <button @click="openSettingsModal()"
+              class="text-slate-400 hover:text-brand-600 transition-all text-lg cursor-pointer p-1" title="Model & API Configuration">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= 3B. GUIDED WEBPAGE RUNDOWN CONTROLLER OVERLAY ================= -->
+  <div x-show="rundownActive" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:leave="transition ease-in duration-200"
+       class="fixed bottom-24 inset-x-0 z-40 flex justify-center px-4 pointer-events-none">
+    <div class="pointer-events-auto max-w-xl w-full card-neo p-5 bg-white/95 backdrop-blur-xl border-brand-300 shadow-float space-y-3.5">
+      
+      <!-- Header Bar of Tour Card -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-[11px] font-bold font-mono px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-600 border border-brand-200">
+            Step <span x-text="rundownStep + 1"></span> of <span x-text="tourSteps.length"></span>
+          </span>
+          <span class="text-xs font-extrabold text-slate-900 flex items-center gap-1.5 truncate">
+            <i class="fa-solid" :class="tourSteps[rundownStep]?.icon + ' text-brand-600'"></i>
+            <span x-text="tourSteps[rundownStep]?.title"></span>
+          </span>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <!-- Auto-advance status button -->
+          <button @click="toggleAutoPlay()"
+                  class="px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold flex items-center gap-1 border transition-all cursor-pointer"
+                  :class="rundownAutoPlay ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
+                  :title="rundownAutoPlay ? 'Click to Pause Auto-Rundown' : 'Click to Resume Auto-Rundown'">
+            <i class="fa-solid" :class="rundownAutoPlay ? 'fa-pause' : 'fa-play'"></i>
+            <span x-text="rundownAutoPlay ? 'Auto (' + rundownCountdown + 's)' : 'Paused'"></span>
+          </button>
+          
+          <!-- Close Tour -->
+          <button @click="stopRundown()" class="h-7 w-7 rounded-xl text-slate-400 hover:text-slate-800 flex items-center justify-center cursor-pointer" title="Exit Rundown">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Animated Progress Bar -->
+      <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-brand-600 to-indigo-500 rounded-full transition-all duration-300"
+             :style="'width: ' + (((rundownStep + 1) / tourSteps.length) * 100) + '%'"></div>
+      </div>
+
+      <!-- Tour Step Content Description -->
+      <p class="text-xs text-slate-600 leading-relaxed font-medium"
+         x-text="tourSteps[rundownStep]?.desc"></p>
+
+      <!-- Action Navigation Buttons -->
+      <div class="flex items-center justify-between pt-1 border-t border-slate-100">
+        <button @click="prevRundownStep()"
+                :disabled="rundownStep === 0"
+                class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-chevron-left text-[10px]"></i>
+          <span>Previous</span>
+        </button>
+
+        <div class="flex items-center space-x-2">
+          <button @click="showRundownModal = true"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition-colors flex items-center gap-1 cursor-pointer">
+            <i class="fa-solid fa-table-list text-xs"></i>
+            <span class="hidden sm:inline">Cheat Sheet</span>
+          </button>
+
+          <button @click="nextRundownStep()"
+                  class="px-4 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold shadow-sm flex items-center gap-1.5 cursor-pointer">
+            <span x-text="rundownStep === tourSteps.length - 1 ? 'Finish Rundown' : 'Next Step'"></span>
+            <i class="fa-solid text-[10px]" :class="rundownStep === tourSteps.length - 1 ? 'fa-check' : 'fa-chevron-right'"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 3C. FULL WEBPAGE RUNDOWN CHEAT SHEET MODAL ================= -->
+  <div x-show="showRundownModal" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md"
+       @click.self="showRundownModal = false"
+       @keydown.escape.window="showRundownModal = false">
+    
+    <div class="card-neo w-full max-w-3xl p-6 sm:p-7 space-y-5 shadow-2xl relative max-h-[85vh] flex flex-col">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+        <div class="flex items-center space-x-3">
+          <div class="h-10 w-10 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-book-open"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">ContractMind v1.5 Complete Platform Rundown</h3>
+            <p class="text-xs text-slate-500">Autonomous Legal AI Architecture & Feature Overview for New Users</p>
+          </div>
+        </div>
+        <button @click="showRundownModal = false" class="text-slate-400 hover:text-slate-800 p-1.5 rounded-lg transition-colors cursor-pointer">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Scrollable Overview Grid -->
+      <div class="overflow-y-auto pr-1 space-y-4 flex-1">
+        
+        <!-- Architecture Pill -->
+        <div class="p-4 rounded-2xl bg-brand-50/60 border border-brand-200/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-brand-900">Cyclic StateGraph Multi-Agent Architecture</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-brand-200/60 text-brand-800 font-bold">LangGraph Core</span>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Contracts are processed through a cyclic debate between 3 specialized AI agents:
+            <strong>Auditor Agent</strong> (identifies non-compliant clauses), 
+            <strong>Opposing Counsel Agent</strong> (defends counter-party interests), and 
+            <strong>Arbiter Agent</strong> (synthesizes market-standard consensus redlines).
+          </p>
+        </div>
+
+        <!-- 6 Feature Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+            <div class="flex items-center space-x-2 text-brand-600 text-xs font-bold">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>1. Ingestion & Contextual RAG</span>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              PyMuPDF extracts full contract sections. Text is chunked and indexed into an in-memory vector store for sub-second legal retrieval.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+            <div class="flex items-center space-x-2 text-amber-600 text-xs font-bold">
+              <i class="fa-solid fa-microchip"></i>
+              <span>2. Multi-Engine & Local Ollama</span>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              Powered by Google Gemini 3.5 Flash Lite (Cloud) and Local Ollama (<code class="bg-amber-100 px-1 rounded text-amber-900">qwen3.5:4b</code>). Live status pills confirm connectivity.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+            <div class="flex items-center space-x-2 text-purple-600 text-xs font-bold">
+              <i class="fa-solid fa-sliders"></i>
+              <span>3. Negotiation Playbooks</span>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              Choose from Standard Corporate (balanced 1x caps), Aggressive Startup (relaxed caps to close deals), or Vendor Friendly (protects IP).
+            </p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+            <div class="flex items-center space-x-2 text-emerald-600 text-xs font-bold">
+              <i class="fa-solid fa-file-word"></i>
+              <span>4. Word Track Changes (.DOCX)</span>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              Generates genuine native Microsoft Word Track Changes XML markup with strike-through deletions, underlines, and inline legal rationale comments.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+            <div class="flex items-center space-x-2 text-blue-600 text-xs font-bold">
+              <i class="fa-solid fa-calendar-check"></i>
+              <span>5. Structured Obligations Matrix</span>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              Automatically extracts contractual duties, obligor/recipient roles, calendar triggers, and breach penalties into clean tabular data.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+            <div class="flex items-center space-x-2 text-rose-600 text-xs font-bold">
+              <i class="fa-solid fa-cubes-stacked"></i>
+              <span>6. 6 Benchmark Test Datasets</span>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              Pre-loaded with Tech M&A, Cloud DPA, Strategic Joint IP, Enterprise MSA, SaaS Agreement, and Mutual NDA for one-click testing.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100 shrink-0">
+        <button @click="startAutoRundown(); showRundownModal = false"
+                class="px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-play text-xs text-brand-600"></i>
+          <span>Play Interactive Tour</span>
+        </button>
+
+        <div class="flex items-center space-x-2">
+          <button @click="showRundownModal = false"
+                  class="px-4 py-2 rounded-2xl text-xs text-slate-600 hover:text-slate-900 font-semibold cursor-pointer">
+            Close
+          </button>
+          <button @click="launchDemo('ma'); showRundownModal = false"
+                  class="px-5 py-2 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs shadow-md shadow-brand-600/25 transition-all flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-bolt text-xs"></i>
+            <span>Test Tech M&A Now</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 4. SLIDE-OUT DRAWER (From Reference Image Left Panel) ================= -->
+  <div x-show="showDrawer" x-cloak
+       class="fixed inset-0 z-50 flex"
+       @keydown.escape.window="showDrawer = false">
+    
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity"
+         @click="showDrawer = false"></div>
+
+    <!-- Drawer Panel -->
+    <div class="relative w-80 max-w-full bg-white h-full shadow-2xl p-6 flex flex-col justify-between z-10 space-y-6">
+      <div class="space-y-6">
+        <!-- Drawer Header -->
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div class="flex items-center space-x-3">
+            <div class="h-10 w-10 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg font-bold">
+              ⚖️
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm text-slate-900">ContractMind v1.5</h3>
+              <p class="text-[10px] text-slate-400">Control & Configuration</p>
+            </div>
+          </div>
+          <button @click="showDrawer = false" class="h-9 w-9 rounded-xl text-slate-400 hover:text-slate-800 flex items-center justify-center cursor-pointer">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Navigation Links with Pastel Rounded Icons (Matches left menu in screenshot!) -->
+        <nav class="space-y-2">
+          <button @click="currentView = 'home'; showDrawer = false" 
+                  class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-2xl hover:bg-slate-50 transition-colors text-left text-xs font-bold text-slate-800">
+            <div class="h-8 w-8 rounded-xl bg-pastel-blueLight text-pastel-blue flex items-center justify-center text-sm">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <span>Recent Files & Analysis</span>
+          </button>
+
+          <button @click="currentView = 'audit'; showDrawer = false" 
+                  class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-2xl hover:bg-slate-50 transition-colors text-left text-xs font-bold text-slate-800">
+            <div class="h-8 w-8 rounded-xl bg-pastel-amberLight text-pastel-amber flex items-center justify-center text-sm">
+              <i class="fa-solid fa-chart-pie"></i>
+            </div>
+            <span>Storage & Telemetry</span>
+          </button>
+
+          <button @click="showQuickStart = true; currentView = 'home'; showDrawer = false" 
+                  class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-2xl hover:bg-slate-50 transition-colors text-left text-xs font-bold text-slate-800">
+            <div class="h-8 w-8 rounded-xl bg-pastel-pinkLight text-pastel-pink flex items-center justify-center text-sm">
+              <i class="fa-solid fa-book-open"></i>
+            </div>
+            <span>Starting Instructions</span>
+          </button>
+
+          <button @click="startAutoRundown(); showDrawer = false" 
+                  class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-2xl hover:bg-slate-50 transition-colors text-left text-xs font-bold text-slate-800">
+            <div class="h-8 w-8 rounded-xl bg-pastel-purpleLight text-pastel-purple flex items-center justify-center text-sm">
+              <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <span>Interactive Webpage Rundown</span>
+          </button>
+
+          <button @click="openSettingsModal(); showDrawer = false" 
+                  class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-2xl hover:bg-slate-50 transition-colors text-left text-xs font-bold text-slate-800">
+            <div class="h-8 w-8 rounded-xl bg-pastel-cyanLight text-pastel-cyan flex items-center justify-center text-sm">
+              <i class="fa-solid fa-sliders"></i>
+            </div>
+            <span>AI Models & API Keys</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Upgrade / Model Status Bottom Card (Matches 'Upgrade More Storage' in reference!) -->
+      <div class="p-5 rounded-3xl bg-gradient-to-br from-brand-50 to-indigo-50 border border-brand-200/80 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-extrabold text-brand-900">Active Inference Core</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        </div>
+        <p class="text-[11px] text-slate-600 leading-snug">
+          Connected to <strong class="text-brand-700" x-text="activeModelLabel"></strong>. Local Ollama & Gemini are ready.
+        </p>
+        <button @click="openSettingsModal(); showDrawer = false"
+                class="w-full py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs shadow-md shadow-brand-600/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-microchip"></i>
+          <span>Configure Engine</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 5. AI ENGINES & API KEYS MODAL ================= -->
+  <div x-show="showSettingsModal" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md"
+       @click.self="showSettingsModal = false"
+       @keydown.escape.window="showSettingsModal = false">
+    
+    <div class="card-neo w-full max-w-2xl p-6 sm:p-7 space-y-5 shadow-2xl relative">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-3">
+          <div class="h-10 w-10 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-sliders"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">AI Engine & API Keys Configuration</h3>
+            <p class="text-xs text-slate-500">Live online status and multi-provider credentials</p>
+          </div>
+        </div>
+        <button @click="showSettingsModal = false" class="text-slate-400 hover:text-slate-800 p-1.5 rounded-lg transition-colors cursor-pointer">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Success Notification Toast -->
+      <div x-show="settingsMsg" x-transition class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-600"></i>
+        <span x-text="settingsMsg"></span>
+      </div>
+
+      <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+        
+        <!-- 1. Google Gemini Key -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-bold text-slate-900">Google Gemini API Key</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-mono font-bold">Online & Active</span>
+            </div>
+            <span class="text-[11px] font-mono text-slate-400">gemini-3.5-flash-lite</span>
+          </div>
+          <div class="relative">
+            <input :type="showGeminiKey ? 'text' : 'password'"
+                   x-model="apiKeys.gemini"
+                   placeholder="Enter Gemini API key (AIzaSy...)"
+                   class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-brand-500 pr-10">
+            <button type="button" @click="showGeminiKey = !showGeminiKey" class="absolute right-3.5 top-3 text-slate-400 hover:text-slate-700 text-xs">
+              <i :class="showGeminiKey ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-500">Configured securely in backend .env or enter custom API key above</p>
+        </div>
+
+        <!-- 2. Local Ollama Integration -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-bold text-slate-900">Local Ollama Runtime</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold"
+                    :class="llmStatus.ollama_available ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                    x-text="llmStatus.ollama_available ? 'ONLINE (Port 11434)' : 'OFFLINE'"></span>
+            </div>
+            <button @click="checkLlmConfig()" class="text-[11px] text-brand-600 hover:underline font-bold flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-rotate-right text-[10px]"></i> Ping Service
+            </button>
+          </div>
+          
+          <div class="text-xs text-slate-700 font-mono p-3 rounded-xl bg-white border border-slate-200/70 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">Endpoint:</span>
+              <span class="text-slate-800" x-text="llmStatus.ollama_base_url || 'http://localhost:11434'"></span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">Installed Models:</span>
+              <span class="text-emerald-700 font-bold" x-text="llmStatus.ollama_models?.length ? llmStatus.ollama_models.join(', ') : 'None yet'"></span>
+            </div>
+          </div>
+
+          <div class="text-[11px] text-slate-600 bg-amber-50 border border-amber-200 p-3 rounded-xl leading-relaxed">
+            <span class="font-bold text-amber-800">Status Note:</span> ContractMind checks your local port 11434. If Ollama has no models or is offline, the pipeline automatically routes through Google Gemini to guarantee zero disruption.
+          </div>
+        </div>
+
+        <!-- 3. OpenAI Key -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-900">OpenAI API Key (Optional)</span>
+            <span class="text-[11px] font-mono text-slate-400">gpt-4o</span>
+          </div>
+          <input type="password" x-model="apiKeys.openai"
+                 placeholder="sk-proj-..."
+                 class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-brand-500">
+        </div>
+
+        <!-- 4. Anthropic Claude Key -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-900">Anthropic Claude API Key (Optional)</span>
+            <span class="text-[11px] font-mono text-slate-400">claude-3-5-sonnet</span>
+          </div>
+          <input type="password" x-model="apiKeys.anthropic"
+                 placeholder="sk-ant-..."
+                 class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-brand-500">
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+        <button @click="showSettingsModal = false"
+                class="px-4 py-2.5 rounded-2xl text-xs text-slate-600 hover:text-slate-900 font-semibold transition-all cursor-pointer">
+          Cancel
+        </button>
+        <button @click="saveSettings()"
+                class="px-5 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs shadow-md shadow-brand-600/25 transition-all flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-floppy-disk text-xs"></i>
+          <span>Save Configuration</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 6. ALPINE.JS APPLICATION LOGIC ================= -->
+  <script>
+    function contractMindApp() {
+      return {
+        currentView: 'home',
+        studioTab: 'redlines',
+        showDrawer: false,
+        showQuickStart: true,
+        showSettingsModal: false,
+        showGeminiKey: false,
+        settingsMsg: '',
+
+        // Rundown Tour State for New Users
+        showRundownBubble: true,
+        rundownActive: false,
+        rundownStep: 0,
+        rundownAutoPlay: true,
+        rundownCountdown: 5,
+        rundownTimer: null,
+        showRundownModal: false,
+        tourCompleted: false,
+
+        tourSteps: [
+          {
+            target: 'tour-header',
+            title: '1. Top Control Bar & Live Core',
+            icon: 'fa-scale-balanced',
+            desc: 'ContractMind v1.5 header: Toggle between the Ingestion Studio and Audit Telemetry. The live indicator on the right shows which AI engine is actively powering your legal reviews in real time.'
+          },
+          {
+            target: 'tour-quickstart',
+            title: '2. 3-Step Starting Instructions',
+            icon: 'fa-book-open',
+            desc: 'Quick 3-step walkthrough for every contract: (1) Ingest contract PDF or select a demo, (2) Choose your active AI Agent, and (3) Simulate multi-agent negotiation debate and download Word (.docx) with Track Changes.'
+          },
+          {
+            target: 'tour-models',
+            title: '3. AI Agent Models & Live Status',
+            icon: 'fa-microchip',
+            desc: 'Select your inference provider: Google Gemini 3.5 Flash Lite (Cloud) or Local Ollama (qwen3.5:4b). The green status pills verify in real time which models are online. If local Ollama is stopped, the pipeline automatically routes to Gemini.'
+          },
+          {
+            target: 'tour-analytics',
+            title: '4. Real-Time Engine Analytics',
+            icon: 'fa-chart-pie',
+            desc: 'Live telemetry tracking total contracts analyzed, token consumption, sub-2s average latency, and estimated cloud model costs with an interactive donut progress meter.'
+          },
+          {
+            target: 'tour-ingestion',
+            title: '5. Contract Ingestion & Playbooks',
+            icon: 'fa-cloud-arrow-up',
+            desc: 'Drag and drop any agreement PDF (MSAs, DPAs, NDAs). Configure your negotiation playbook strategy: Standard Corporate (balanced 1x caps), Aggressive Startup (close deals fast), or Vendor Friendly.'
+          },
+          {
+            target: 'tour-benchmarks',
+            title: '6. 1-Click Pre-Loaded Test Contracts',
+            icon: 'fa-cubes-stacked',
+            desc: 'No PDF on hand? Test immediately by clicking any of the 6 benchmark contracts (Tech M&A, Cloud DPA, Joint IP, Enterprise MSA, SaaS Agreement, Mutual NDA) for an instant automated review.'
+          },
+          {
+            target: 'tour-documents',
+            title: '7. Analyzed Contracts & Interactive Studio',
+            icon: 'fa-file-lines',
+            desc: 'Click any analyzed agreement to launch the Contract Studio: inspect consensus redlines with highlighted diff deletions/insertions, read the 3-agent debate transcript, and export Word (.docx) Track Changes!'
+          }
+        ],
+
+        contracts: [],
+        activeContract: null,
+        selectedFile: null,
+        contractTitle: '',
+        selectedProvider: 'gemini',
+        selectedPlaybook: 'Standard Corporate Playbook',
+        uploading: false,
+        currentStep: 0,
+        isDragging: false,
+        
+        apiKeys: {
+          gemini: '',
+          openai: '',
+          anthropic: ''
+        },
+
+        llmStatus: {
+          gemini_configured: true,
+          openai_configured: false,
+          anthropic_configured: false,
+          ollama_available: false,
+          ollama_base_url: 'http://localhost:11434',
+          ollama_models: []
+        },
+
+        metrics: {
+          total_executions: 0,
+          total_tokens_consumed: 0,
+          total_cost_usd: 0,
+          average_latency_ms: 0,
+          recent_logs: []
+        },
+
+        playbooks: [
+          { id: 'Standard Corporate Playbook', name: 'Standard Corporate', risk: 'Low', desc: 'Mutual indemnification and 1x liability caps' },
+          { id: 'Aggressive Startup Playbook', name: 'Aggressive Startup', risk: 'High', desc: 'Relaxed liability caps to close deals quickly' },
+          { id: 'Vendor Friendly Playbook', name: 'Vendor Friendly', risk: 'Medium', desc: 'Protects proprietary code and cure windows' }
+        ],
+
+        steps: [
+          'Ingesting & extracting document structure via PyMuPDF...',
+          'Indexing Contextual RAG chunks into Vector Store...',
+          'Running Auditor Agent compliance scan against Playbook...',
+          'Simulating Opposing Counsel negotiation & counter-clauses...',
+          'Synthesizing consensus redlines & extracting obligations JSON...'
+        ],
+
+        get activeModelLabel() {
+          if (this.selectedProvider === 'gemini') return 'Gemini 3.5 Flash';
+          if (this.selectedProvider === 'ollama') {
+            return this.llmStatus.ollama_models?.length ? `Ollama (${this.llmStatus.ollama_models[0]})` : 'Local Ollama';
+          }
+          if (this.selectedProvider === 'openai') return 'GPT-4o Engine';
+          if (this.selectedProvider === 'anthropic') return 'Claude 3.5 Sonnet';
+          return 'Gemini 3.5 Flash';
+        },
+
+        get activeModelIsOnline() {
+          if (this.selectedProvider === 'gemini') return this.llmStatus.gemini_configured;
+          if (this.selectedProvider === 'ollama') return this.llmStatus.ollama_available;
+          if (this.selectedProvider === 'openai') return this.llmStatus.openai_configured;
+          if (this.selectedProvider === 'anthropic') return this.llmStatus.anthropic_configured;
+          return true;
+        },
+
+        get ollamaActiveModelName() {
+          if (this.llmStatus.ollama_models && this.llmStatus.ollama_models.length > 0) {
+            return this.llmStatus.ollama_models[0];
+          }
+          return 'qwen3.5:4b (offline)';
+        },
+
+        async initApp() {
+          try {
+            if (localStorage.getItem('cm_rundown_seen') === 'true') {
+              this.showRundownBubble = false;
+              this.tourCompleted = true;
+            } else {
+              this.showRundownBubble = true;
+            }
+          } catch (e) {
+            this.showRundownBubble = true;
+          }
+
+          await this.checkLlmConfig();
+          await this.fetchContracts();
+          await this.fetchMetrics();
+          setInterval(() => this.fetchMetrics(), 6000);
+        },
+
+        dismissBubble() {
+          this.showRundownBubble = false;
+          try { localStorage.setItem('cm_rundown_seen', 'true'); } catch (e) {}
+        },
+
+        startAutoRundown() {
+          this.dismissBubble();
+          this.currentView = 'home';
+          this.rundownActive = true;
+          this.rundownStep = 0;
+          this.rundownAutoPlay = true;
+          this.goToRundownStep(0);
+          this.startRundownTimer();
+        },
+
+        toggleRundown() {
+          if (this.rundownActive) {
+            this.stopRundown();
+          } else {
+            this.startAutoRundown();
+          }
+        },
+
+        goToRundownStep(idx) {
+          this.rundownStep = idx;
+          this.rundownCountdown = 5;
+          this.$nextTick(() => {
+            // Clean up previous spotlight highlights and badges
+            document.querySelectorAll('.tour-spotlight-active').forEach(node => {
+              node.classList.remove('tour-spotlight-active');
+            });
+            document.querySelectorAll('.tour-active-badge').forEach(b => b.remove());
+
+            const step = this.tourSteps[this.rundownStep];
+            if (step && step.target) {
+              const el = document.getElementById(step.target);
+              if (el) {
+                el.classList.add('tour-spotlight-active');
+
+                // Attach glowing active module pill beacon
+                const badge = document.createElement('div');
+                badge.className = 'tour-active-badge absolute -top-3.5 right-6 z-40 px-3.5 py-1 rounded-full bg-brand-600 text-white text-[11px] font-extrabold tracking-wide uppercase shadow-lg shadow-brand-600/40 flex items-center gap-2 pointer-events-none transition-all';
+                badge.innerHTML = `<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span></span><span>ACTIVE MODULE &bull; STEP ${idx + 1}/${this.tourSteps.length}</span>`;
+                el.appendChild(badge);
+
+                // Smart scroll positioning with comfortable margin so bottom controller never obscures the module
+                if (step.target === 'tour-header') {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                  const rect = el.getBoundingClientRect();
+                  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                  const targetTop = scrollTop + rect.top - 100;
+                  window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+                }
+              }
+            }
+          });
+        },
+
+        nextRundownStep() {
+          if (this.rundownStep < this.tourSteps.length - 1) {
+            this.goToRundownStep(this.rundownStep + 1);
+          } else {
+            this.finishRundown();
+          }
+        },
+
+        prevRundownStep() {
+          if (this.rundownStep > 0) {
+            this.goToRundownStep(this.rundownStep - 1);
+          }
+        },
+
+        toggleAutoPlay() {
+          this.rundownAutoPlay = !this.rundownAutoPlay;
+        },
+
+        startRundownTimer() {
+          if (this.rundownTimer) clearInterval(this.rundownTimer);
+          this.rundownCountdown = 5;
+          this.rundownTimer = setInterval(() => {
+            if (this.rundownActive && this.rundownAutoPlay) {
+              this.rundownCountdown--;
+              if (this.rundownCountdown <= 0) {
+                this.nextRundownStep();
+              }
+            }
+          }, 1000);
+        },
+
+        stopRundown() {
+          this.rundownActive = false;
+          if (this.rundownTimer) {
+            clearInterval(this.rundownTimer);
+            this.rundownTimer = null;
+          }
+          document.querySelectorAll('.tour-spotlight-active').forEach(node => {
+            node.classList.remove('tour-spotlight-active');
+          });
+          document.querySelectorAll('.tour-active-badge').forEach(b => b.remove());
+        },
+
+        finishRundown() {
+          this.stopRundown();
+          this.tourCompleted = true;
+          try { localStorage.setItem('cm_rundown_seen', 'true'); } catch (e) {}
+        },
+
+        async checkLlmConfig() {
+          try {
+            const res = await fetch('/api/v1/analysis/llm/config');
+            if (res.ok) {
+              const data = await res.json();
+              this.llmStatus = data;
+            }
+          } catch (e) {
+            console.warn('Could not check LLM config', e);
+          }
+        },
+
+        openSettingsModal() {
+          this.settingsMsg = '';
+          this.showSettingsModal = true;
+          this.checkLlmConfig();
+        },
+
+        async saveSettings() {
+          try {
+            const payload = {
+              gemini_api_key: this.apiKeys.gemini,
+              openai_api_key: this.apiKeys.openai,
+              anthropic_api_key: this.apiKeys.anthropic
+            };
+
+            const res = await fetch('/api/v1/analysis/llm/config', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+              this.settingsMsg = 'AI Configuration saved successfully!';
+              await this.checkLlmConfig();
+              setTimeout(() => {
+                this.showSettingsModal = false;
+                this.settingsMsg = '';
+              }, 1200);
+            }
+          } catch (e) {
+            alert('Failed to save settings: ' + e.message);
+          }
+        },
+
+        async fetchContracts() {
+          try {
+            const res = await fetch('/api/v1/contracts/');
+            if (res.ok) this.contracts = await res.json();
+          } catch (e) {
+            console.error('Failed to load contracts', e);
+          }
+        },
+
+        async fetchMetrics() {
+          try {
+            const res = await fetch('/api/v1/analysis/audit/summary');
+            if (res.ok) this.metrics = await res.json();
+          } catch (e) {
+            console.error('Failed to load telemetry metrics', e);
+          }
+        },
+
+        handleFileSelect(e) {
+          if (e.target.files && e.target.files[0]) {
+            this.selectedFile = e.target.files[0];
+            this.contractTitle = this.selectedFile.name.replace(/\.[^/.]+$/, '');
+          }
+        },
+
+        handleFileDrop(e) {
+          this.isDragging = false;
+          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            this.selectedFile = e.dataTransfer.files[0];
+            this.contractTitle = this.selectedFile.name.replace(/\.[^/.]+$/, '');
+          }
+        },
+
+        async uploadAndAnalyze() {
+          if (!this.selectedFile) return;
+          try {
+            this.uploading = true;
+            this.currentStep = 0;
+            const stepTimer = setInterval(() => {
+              if (this.currentStep < this.steps.length - 1) this.currentStep++;
+            }, 1000);
+
+            const formData = new FormData();
+            formData.append('file', this.selectedFile);
+            formData.append('title', this.contractTitle);
+            formData.append('playbook_name', this.selectedPlaybook);
+
+            const uploadRes = await fetch('/api/v1/contracts/upload', {
+              method: 'POST',
+              body: formData
+            });
+
+            if (!uploadRes.ok) throw new Error('Upload failed');
+            const contractData = await uploadRes.json();
+
+            await fetch(`/api/v1/analysis/${contractData.id}/trigger`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                playbook_name: this.selectedPlaybook,
+                llm_provider: this.selectedProvider,
+                model_name: this.selectedProvider === 'gemini' ? 'gemini-3.5-flash-lite' : undefined
+              })
+            });
+
+            clearInterval(stepTimer);
+            await this.openContract(contractData.id);
+            await this.fetchContracts();
+            this.selectedFile = null;
+            this.uploading = false;
+          } catch (err) {
+            alert('Analysis error: ' + err.message);
+            this.uploading = false;
+          }
+        },
+
+        async launchDemo(type) {
+          try {
+            this.uploading = true;
+            this.currentStep = 0;
+            const timer = setInterval(() => {
+              if (this.currentStep < this.steps.length - 1) this.currentStep++;
+            }, 800);
+
+            const params = new URLSearchParams({
+              llm_provider: this.selectedProvider,
+              model_name: this.selectedProvider === 'gemini' ? 'gemini-3.5-flash-lite' : (this.selectedProvider === 'ollama' ? (this.llmStatus.ollama_models?.[0] || 'qwen3.5:4b') : ''),
+              playbook: this.selectedPlaybook
+            });
+
+            const res = await fetch(`/api/v1/contracts/demo/${type}?${params.toString()}`, { method: 'POST' });
+            if (!res.ok) throw new Error('Demo failed to load');
+            const data = await res.json();
+            clearInterval(timer);
+            await this.openContract(data.id);
+            await this.fetchContracts();
+            this.uploading = false;
+          } catch (err) {
+            alert('Failed to load demo: ' + err.message);
+            this.uploading = false;
+          }
+        },
+
+        async deleteContract(id) {
+          if (!confirm('Are you sure you want to delete this contract?')) return;
+          try {
+            const res = await fetch(`/api/v1/contracts/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+              if (this.activeContract && this.activeContract.id === id) {
+                this.activeContract = null;
+                this.currentView = 'home';
+              }
+              await this.fetchContracts();
+            } else {
+              alert('Failed to delete contract');
+            }
+          } catch (e) {
+            alert('Error deleting contract: ' + e.message);
+          }
+        },
+
+        async resetMetrics() {
+          if (!confirm('Are you sure you want to clear all telemetry audit logs?')) return;
+          try {
+            const res = await fetch('/api/v1/analysis/audit/reset', { method: 'DELETE' });
+            if (res.ok) {
+              await this.fetchMetrics();
+            } else {
+              alert('Failed to reset metrics');
+            }
+          } catch (e) {
+            alert('Error resetting metrics: ' + e.message);
+          }
+        },
+
+        async openContract(id) {
+          try {
+            const res = await fetch(`/api/v1/contracts/${id}`);
+            if (res.ok) {
+              this.activeContract = await res.json();
+              this.currentView = 'studio';
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          } catch (e) {
+            alert('Error loading contract: ' + e.message);
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

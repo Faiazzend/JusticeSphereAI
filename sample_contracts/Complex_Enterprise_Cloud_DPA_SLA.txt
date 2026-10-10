@@ -1,0 +1,59 @@
+GLOBAL ENTERPRISE CLOUD & AI INFRASTRUCTURE MSA
+HyperScale Cloud Infrastructure Ltd & Nexus Financial Services Inc | $12,400,000 Annual Spend
+
+=== RECITALS AND MASTER CLOUD INFRASTRUCTURE FRAMEWORK ===
+This ENTERPRISE CLOUD SERVICES AND AI INFRASTRUCTURE AGREEMENT (this 'Agreement'), effective as of November 1, 2026, is entered into by and between HyperScale Cloud Infrastructure Ltd., a company organized under the laws of Ireland, with offices at Grand Canal Dock, Dublin 2 ('Provider'), and Nexus Financial Services Inc., a Delaware corporation, with headquarters at 200 West Street, New York, NY 10282 ('Customer'). WHEREAS, Provider operates multi-region high-performance cloud data centers equipped with specialized AI acceleration clusters; and WHEREAS, Customer desires to procure dedicated enterprise GPU compute, private LLM inference pipelines, and secure data storage for mission-critical financial applications, subject to stringent security, compliance, and service level covenants.
+
+=== SECTION 1. DEDICATED GPU COMPUTE AND INFRASTRUCTURE PROVISIONING ===
+1.1 Provision of Services. Subject to the terms of this Agreement, Provider shall allocate, configure, and maintain for Customer a dedicated cluster of five hundred twelve (512) NVIDIA H100 SXM5 Tensor Core GPU nodes ('Dedicated Cluster') housed in Provider's Tier IV certified data centers in Virginia (US-East) and Frankfurt (EU-Central). Provider guarantees private interconnect throughput of not less than 3.2 Tbps per node with sub-5-microsecond latency. 
+1.2 Scaling and High Availability. Provider shall ensure automated failover between the designated US and EU compute availability zones. All data transmission between Customer endpoints and Provider clusters shall be secured using TLS 1.3 in-transit and AES-256 at-rest encryption with Customer-Managed Encryption Keys (CMEK).
+
+=== SECTION 2. ANNUAL COMMITTED SPEND, INVOICING AND OVERAGE BILLING ===
+2.1 Committed Enterprise Spend. Customer agrees to a minimum committed annual spend of TWELVE MILLION FOUR HUNDRED THOUSAND DOLLARS ($12,400,000 USD) per contract year (the 'Minimum Annual Commitment'), billed in twelve equal monthly installments of $1,033,333.33 USD payable in advance. 
+2.2 Overage Compute Fees. Any GPU compute hours exceeding the monthly allocation of 374,000 GPU-hours shall be billed at the overage rate of $4.50 USD per GPU-hour. Overage fees shall be invoiced monthly in arrears. 
+2.3 Payment Terms and Late Interest. Customer shall pay all undisputed invoices within Net thirty (30) days of receipt. Any amount not paid when due shall accrue interest at the rate of 1.5% per month or the highest rate permitted by applicable law. In the event Customer fails to cure an overdue payment within forty-five (45) days of written notice, Provider may temporarily suspend cluster access.
+
+=== SECTION 3. MODEL WEIGHTS, PROMPT CONFIDENTIALITY AND DATA OWNERSHIP ===
+3.1 Customer Data Ownership. As between the parties, Customer owns all right, title, and interest in and to Customer Data, including all financial records, algorithmic prompts, model inputs, proprietary neural model weights, and output artifacts. 
+3.2 Aggregation and Foundation Training Rights (CRITICAL PROVISION). Customer hereby grants Provider a non-exclusive, perpetual, worldwide, royalty-free license to ingest, de-identify, vectorize, and analyze Customer prompts, telemetry data, and system logs for the purpose of training, tuning, and improving Provider's foundational AI models, threat detection neural classifiers, and public cloud infrastructure algorithms; provided that Provider does not disclose Customer's raw un-anonymized financial figures to third parties. 
+3.3 Reverse Engineering Prohibition. Customer shall not reverse engineer, decompile, or extract the underlying hypervisor firmware or proprietary scheduling algorithms running on Provider's infrastructure.
+
+=== SECTION 4. DATA PROCESSING ADDENDUM (DPA) AND CROSS-BORDER TRANSFERS ===
+4.1 Controller to Processor Relationship. For the purposes of Regulation (EU) 2016/679 ('GDPR') and the California Consumer Privacy Act ('CCPA'), Customer acts as the Data Controller and Provider acts solely as the Data Processor. Provider shall process Personal Data strictly in accordance with Customer's documented instructions and the Data Processing Addendum attached as Exhibit B. 
+4.2 Cross-Border Data Transfers. Where Personal Data originating in the European Economic Area is transferred to US data centers, the Standard Contractual Clauses (SCCs Module 2 - Controller to Processor) adopted by the European Commission shall govern. 
+4.3 Mandatory Security Incident Notification. In the event of any confirmed or suspected unauthorized access, alteration, disclosure, or destruction of Customer Data (a 'Security Incident'), Provider shall notify Customer in writing within twenty-four (24) hours of becoming aware of such incident. Provider shall deliver a comprehensive forensic audit report within seventy-two (72) hours. 
+4.4 Sub-Processors. Provider shall provide Customer with at least thirty (30) days prior written notice before engaging any new sub-processor. Customer shall have the right to object to such appointment within fifteen (15) days; if the parties cannot resolve the objection, Customer may terminate the affected Service Order without liability or penalty.
+
+=== SECTION 5. CYBERSECURITY AUDIT, PENETRATION TESTING AND REGULATORY ACCESS ===
+5.1 Annual Compliance Certifications. Provider shall maintain and deliver to Customer annually current SOC 1 Type II, SOC 2 Type II, ISO/IEC 27001:2022, and PCI-DSS Level 1 compliance reports prepared by an independent certified public accounting firm. 
+5.2 Customer Audit and Penetration Rights. Upon fifteen (15) business days prior written notice, Customer (or its designated independent security auditor) and authorized financial regulators (including the Federal Reserve and the SEC) shall have the right to inspect Provider's data center facilities, security controls, access logs, and environmental safeguards during normal business hours. Customer may conduct non-destructive vulnerability assessments and penetration testing once per calendar year.
+
+=== SECTION 6. SERVICE LEVEL AGREEMENT (SLA), UPTIME AND REMEDIES ===
+6.1 Monthly Uptime Commitment. Provider warrants that the Dedicated GPU Cluster and associated networking shall achieve a Monthly Uptime Percentage of at least 99.99% during each calendar month (the 'SLA Target'). 
+6.2 Tiered Service Credits. If Provider fails to meet the SLA Target, Customer's exclusive financial remedy shall be the issuance of service credits applied against the subsequent month's invoice in accordance with the following table: 
+- Uptime 99.90% to 99.98%: 10% credit of monthly billing ($103,333 USD) 
+- Uptime 99.50% to 99.89%: 25% credit of monthly billing ($258,333 USD) 
+- Uptime Below 99.50%: 50% credit of monthly billing ($516,666 USD) AND Customer shall have the immediate right to terminate this Agreement for material cause without any early termination fee. 
+6.3 Disaster Recovery and Business Continuity. In the event of a catastrophic regional outage, Provider guarantees a Recovery Time Objective (RTO) of not more than two (2) hours, and a Recovery Point Objective (RPO) of not more than fifteen (15) minutes.
+
+=== SECTION 7. LIMITATION OF LIABILITY AND SUPER-CAPS ===
+7.1 General Aggregate Cap. Except as set forth in Section 7.2, each party's maximum cumulative aggregate liability arising out of or relating to this Agreement shall be limited to the total fees paid by Customer to Provider in the twelve (12) months preceding the incident giving rise to liability ($12,400,000 USD). 
+7.2 Super-Cap for Data Protection and Security Breaches. Notwithstanding Section 7.1, Provider's liability arising out of or resulting from: (a) a breach of Section 4 (DPA / Security Incidents); (b) gross negligence or willful misconduct; or (c) third-party IP indemnification obligations under Section 8, shall be subject to a super-cap equal to THREE TIMES (3x) the annual contract value ($37,200,000 USD). 
+7.3 Consequential Damages Exclusion. Neither party shall be liable for indirect, punitive, or consequential damages; provided, however, that administrative fines and regulatory penalties levied by supervisory authorities under GDPR resulting from Provider's security breach shall be deemed direct actionable damages.
+
+=== SECTION 8. TERM, TRANSITION ASSISTANCE AND DATA DESTRUCTION ===
+8.1 Term. The initial term of this Agreement shall commence on November 1, 2026 and continue for thirty-six (36) months, automatically renewing for successive twelve (12) month periods unless either party gives written notice of non-renewal at least ninety (90) days prior to expiration. 
+8.2 Transition Services. Upon any expiration or termination of this Agreement, Provider shall provide Customer with up to ninety (90) days of orderly transition assistance and data export support at Provider's then-current standard professional services rates. 
+8.3 Secure Data Destruction. Within thirty (30) days following conclusion of the transition period, Provider shall securely sanitize and purge all Customer Data from all persistent storage drives in compliance with DoD 5220.22-M / NIST SP 800-88 standards and deliver a written Certificate of Destruction signed by an executive officer.
+
+=== SECTION 9. GOVERNING LAW AND JURISDICTION ===
+9.1 Governing Law. This Agreement shall be governed by, and construed in accordance with, the laws of the State of New York, without regard to conflict of laws principles that would require the application of the laws of any other jurisdiction. 
+9.2 Exclusive Jurisdiction. Each party irrevocably submits to the exclusive personal jurisdiction of the United States District Court for the Southern District of New York (SDNY), or, if federal jurisdiction is lacking, the Supreme Court of the State of New York, New York County. Each party waives all objections based on forum non conveniens.
+
+=== SCHEDULE 1. TIERED SLA AVAILABILITY AND SERVICE CREDIT MATRIX ===
+Measurement Metric: Monthly GPU High-Performance Compute Availability
+Calculation Formula: [(Total Minutes in Month - Unplanned Downtime Minutes) / Total Minutes in Month] * 100
+- Tier 1 (99.99% - 100%): Full Operational Compliance (0% Penalty Credit)
+- Tier 2 (99.90% - 99.98%): 10% Monthly Service Credit ($103,333.33 applied to next invoice)
+- Tier 3 (99.50% - 99.89%): 25% Monthly Service Credit ($258,333.33 applied to next invoice)
+- Tier 4 (< 99.50%): 50% Monthly Service Credit ($516,666.66) AND Customer immediate right of contract rescission.

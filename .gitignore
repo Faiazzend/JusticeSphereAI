@@ -1,0 +1,63 @@
+# Python & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Database & Vector Store Data
+*.db
+*.sqlite3
+contractmind.db
+backend/contractmind.db
+chroma_data/
+backend/chroma_data/
+uploads/
+backend/uploads/
+exports/
+backend/exports/
+
+# Logs & Temporary files
+*.log
+backend/backend.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment & Sensitive API Keys
+.env
+*.env
+backend/.env
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+!*.env.example
+!backend/.env.example
+
+# Node & Frontend Build Artifacts
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+.pnp
+.pnp.js
+
+# OS & Editor metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

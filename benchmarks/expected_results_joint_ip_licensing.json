@@ -1,0 +1,149 @@
+{
+  "contract_metadata": {
+    "title": "Strategic AI Joint Development, IP Cross-Licensing and Commercialization Agreement",
+    "parties": {
+      "developer": "Synapse BioMedical AI Inc (Cambridge, MA, USA)",
+      "sponsor": "Orion Therapeutics International plc (London, UK)"
+    },
+    "joint_rd_budget": "$45,000,000 USD",
+    "effective_date": "2026-12-01",
+    "governing_law": "Commonwealth of Massachusetts (JAMS Arbitration, Boston)",
+    "benchmark_id": "BENCH-IP-003"
+  },
+  "expected_risk_summary": {
+    "overall_score": 82.5,
+    "risk_rating": "HIGH RISK",
+    "critical_count": 2,
+    "high_count": 3,
+    "medium_count": 1,
+    "low_count": 1,
+    "category_scores": {
+      "IP Ownership & Grant-Backs": 92.0,
+      "Commercial Exploitation Rights": 84.0,
+      "Technology Escrow Triggers": 80.0,
+      "Milestones & Royalty Auditing": 74.0,
+      "Export Control & Governance": 60.0
+    }
+  },
+  "flagged_clauses_and_traps": [
+    {
+      "clause_reference": "Section 2.2 (Foreground Project IP and Joint Ownership)",
+      "category": "IP Ownership & Grant-Backs",
+      "severity": "CRITICAL",
+      "score": 92.0,
+      "trap_mechanism": "Joint Ownership License Without Accounting Trap: Section 2.2 grants both parties joint ownership of Foreground IP with the explicit right to license to third parties WITHOUT consent or accounting of profits. Sponsor (large pharma) could license the co-developed generative biology algorithms to third-party competitors without sharing any licensing revenue with Developer.",
+      "original_text_excerpt": "All inventions, software models, chemical structures, and patentable discoveries conceived or reduced to practice jointly... shall be owned jointly by Developer and Sponsor. Either party may freely exploit, manufacture, commercialize, or non-exclusively license such Joint Foreground IP worldwide without obtaining the consent of, or accounting for any royalties or profits to, the other party.",
+      "expected_redline": {
+        "diff_type": "REPLACE",
+        "suggested_text": "Developer shall sole and exclusively own all Foreground IP comprising algorithmic architectures, model weights, and software code. Sponsor shall sole and exclusively own all Foreground IP comprising specific validated chemical drug compounds and therapeutic matter. Neither party may license or assign Joint IP without the prior written consent of, and a fifty-fifty (50/50) accounting of net licensing revenues to, the other party.",
+        "legal_rationale": "Divides ownership along technological competencies (AI code to Developer, drug molecules to Sponsor) and closes the loophole allowing licensing to competitors without profit sharing."
+      }
+    },
+    {
+      "clause_reference": "Section 5.2 (Technology Escrow Release Triggers)",
+      "category": "Technology Escrow Triggers",
+      "severity": "CRITICAL",
+      "score": 85.0,
+      "trap_mechanism": "Vague Escrow Release Trap: Release trigger includes 'Developer's material failure to provide required technical support following thirty (30) days notice'. Sponsor could engineer a subjective technical support dispute to trigger release of Developer's proprietary neural model source code and weights from escrow.",
+      "original_text_excerpt": "The Escrow Agent shall release the deposited materials to Sponsor solely upon the occurrence of: (a) Developer filing a petition in bankruptcy or insolvency; (b) Developer ceasing normal business operations; or (c) Developer's material failure to provide required technical support following thirty (30) days notice and failure to cure.",
+      "expected_redline": {
+        "diff_type": "REPLACE",
+        "suggested_text": "The Escrow Agent shall release the deposited materials to Sponsor solely upon: (a) a final non-appealable judicial adjudication of Developer's voluntary bankruptcy; or (b) Developer's permanent cessation of business operations without a successor entity. In no event shall routine technical disagreements or support queries constitute an escrow release trigger.",
+        "legal_rationale": "Removes subjective support disputes as an escrow release trigger, protecting Developer's core source code from premature or hostile disclosure."
+      }
+    },
+    {
+      "clause_reference": "Section 4.3 (Reporting and Audit Rights / 5% Underpayment Penalty)",
+      "category": "Milestones & Royalty Auditing",
+      "severity": "HIGH",
+      "score": 75.0,
+      "trap_mechanism": "Audit Delay and Cost Barrier: 45 days post-quarter for royalty reports delays cash flow; 20 business days advance notice gives Sponsor ample time to adjust accounting; and Developer bears initial audit costs unless underpayment exceeds 5%.",
+      "original_text_excerpt": "Sponsor shall deliver quarterly royalty statements within forty-five (45) days following each calendar quarter. Any late remittance shall bear interest at 1.0% per month. Developer may conduct an annual audit of Sponsor's books... upon twenty (20) business days written notice. If an underpayment exceeding 5% is revealed...",
+      "expected_redline": {
+        "diff_type": "REPLACE",
+        "suggested_text": "Sponsor shall deliver quarterly royalty statements and payments within thirty (30) days following each calendar quarter. Late payments shall bear interest at 1.5% per month. Developer may conduct an audit upon ten (10) business days notice. If an underpayment exceeding three percent (3%) is discovered, Sponsor shall immediately remit the shortfall plus interest and pay all auditor expenses.",
+        "legal_rationale": "Tightens payment window to 30 days, increases late interest to market 1.5%, and lowers audit reimbursement threshold from 5% to 3%."
+      }
+    },
+    {
+      "clause_reference": "Section 6.2 (Freedom to Operate Disclaimer)",
+      "category": "Commercial Exploitation Rights",
+      "severity": "HIGH",
+      "score": 72.0,
+      "trap_mechanism": "Complete Disclaimer of Third-Party Infringement: Leaves Developer vulnerable if Sponsor's chemical targets or drug candidates infringe pre-existing patent thickets held by competing pharmaceutical conglomerates.",
+      "original_text_excerpt": "EXCEPT AS EXPRESSLY SET FORTH HEREIN, NEITHER PARTY MAKES ANY REPRESENTATION OR WARRANTY THAT THE MANUFACTURE, USE, SALE, OR IMPORTATION OF ANY DRUG CANDIDATE WILL NOT INFRINGE VALID PATENT RIGHTS OF ANY THIRD PARTY.",
+      "expected_redline": {
+        "diff_type": "REPLACE",
+        "suggested_text": "Each party represents and warrants that, to its knowledge after due inquiry by patent counsel, its contributions to the Research Plan and target selections do not infringe any valid patent rights of any third party. Sponsor shall indemnify Developer against third-party patent infringement claims arising from commercialization in the Exclusive Field.",
+        "legal_rationale": "Inserts a qualified freedom-to-operate warranty and mandates that Sponsor indemnify Developer against patent infringement claims arising from drug sales."
+      }
+    }
+  ],
+  "expected_structured_obligations": [
+    {
+      "id": "obl_ip_001",
+      "clause_reference": "Section 1.1",
+      "obligor": "Synapse BioMedical AI Inc (Developer)",
+      "recipient": "Orion Therapeutics International plc (Sponsor)",
+      "obligation_type": "Research Personnel Commitment",
+      "description": "Dedicate thirty (30) full-time equivalent (FTE) machine learning research scientists to the Research Plan.",
+      "due_date_or_trigger": "Throughout the 7-year Research Term",
+      "recurrence": "Continuous",
+      "penalty_for_breach": "Reduction in FTE funding payments; right to terminate Research Plan",
+      "is_critical": true
+    },
+    {
+      "id": "obl_ip_002",
+      "clause_reference": "Section 4.1",
+      "obligor": "Orion Therapeutics International plc (Sponsor)",
+      "recipient": "Synapse BioMedical AI Inc (Developer)",
+      "obligation_type": "Milestone Payments",
+      "description": "Pay $5,000,000 for Phase I, $15,000,000 for IND acceptance, and $25,000,000 for Phase II clinical completion.",
+      "due_date_or_trigger": "Within 30 days of verified achievement of each milestone",
+      "recurrence": "Per Milestone",
+      "penalty_for_breach": "1.0% (or 1.5%) monthly late interest accrual; immediate license revocation",
+      "is_critical": true
+    },
+    {
+      "id": "obl_ip_003",
+      "clause_reference": "Section 4.2 & 4.3",
+      "obligor": "Orion Therapeutics International plc (Sponsor)",
+      "recipient": "Synapse BioMedical AI Inc (Developer)",
+      "obligation_type": "Royalty Reporting & Payment",
+      "description": "Deliver quarterly Net Sales statements and remit tiered royalties (4.0% to 6.5%).",
+      "due_date_or_trigger": "Within 45 days (or 30 days) following conclusion of each calendar quarter",
+      "recurrence": "Quarterly",
+      "penalty_for_breach": "Late interest accrual and right to conduct independent audit",
+      "is_critical": true
+    },
+    {
+      "id": "obl_ip_004",
+      "clause_reference": "Section 5.1",
+      "obligor": "Synapse BioMedical AI Inc (Developer)",
+      "recipient": "Iron Mountain Escrow Agent (for Sponsor)",
+      "obligation_type": "Source Code & Model Escrow Deposit",
+      "description": "Deposit source code, hyperparameters, and model weights into technology escrow and update quarterly.",
+      "due_date_or_trigger": "Within 30 days of Effective Date, and quarterly thereafter",
+      "recurrence": "Quarterly",
+      "penalty_for_breach": "Withholding of FTE funding installments until deposit confirmed",
+      "is_critical": true
+    },
+    {
+      "id": "obl_ip_005",
+      "clause_reference": "Section 7.1",
+      "obligor": "Both Parties",
+      "recipient": "Patent Offices (USPTO / EPO / JPO)",
+      "obligation_type": "Patent Prosecution Cost Sharing",
+      "description": "Jointly direct patent filing and pay 50% each of all official prosecution fees for Foreground IP.",
+      "due_date_or_trigger": "Promptly upon receipt of patent counsel invoices",
+      "recurrence": "Upon Trigger",
+      "penalty_for_breach": "Sole title to patent passes to paying party",
+      "is_critical": false
+    }
+  ],
+  "expected_debate_consensus": {
+    "auditor_agent_opening": "HIGH RISK: Flagged Section 2.2 joint ownership loophole allowing Sponsor to license joint AI models to competitors without profit sharing, plus subjective source code escrow release triggers.",
+    "opposing_counsel_counter": "Sponsor Counsel Counter: Sponsor is financing $45M in research and demands joint ownership of all project discoveries. However, Sponsor is willing to restrict third-party licensing to non-competing entities with revenue sharing.",
+    "synthesizer_consensus": "Consensus Reached: Restructured IP allocation so Developer owns algorithmic weights while Sponsor owns chemical drug matter; inserted 50/50 profit sharing on any joint licensing; restricted escrow release to formal bankruptcy only."
+  }
+}
