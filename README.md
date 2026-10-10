@@ -107,6 +107,24 @@ This automatically initializes the database, verifies dependencies, starts the F
 
 ---
 
+## ☁️ Deploying on Vercel (Multi-Service Architecture)
+
+ContractMind is configured for instant single-project deployment on Vercel using [Vercel Services](https://vercel.com/docs/services):
+
+* **`frontend` (Next.js):** Public front-end served at `/(.*)` with full dashboard, obligation viewer, and risk breakdown.
+* **`backend` (FastAPI):** Python serverless engine providing API routes (`/api/(.*)`), Swagger docs (`/docs`), MCP endpoints (`/mcp/(.*)`), and the **Standalone Interactive Studio** at [`/studio`](#).
+* **Service Binding:** Next.js server functions communicate with FastAPI internally through `process.env.BACKEND_URL`.
+
+### One-Click Vercel Setup:
+1. Import the repository [`Faiazzend/JusticeSphereAI`](https://github.com/Faiazzend/JusticeSphereAI) into your Vercel Dashboard.
+2. Leave the Root Directory as default (`.`) — Vercel detects `vercel.json` automatically.
+3. Configure the following Environment Variables in the project settings:
+   * `GEMINI_API_KEY`: Your Google Gemini API Key.
+   * `SECRET_KEY`: A secure random string for JWT secret.
+4. Deploy! Both services will build and link automatically.
+
+---
+
 ## 🧪 Testing
 
 Run the automated test suite using pytest:
