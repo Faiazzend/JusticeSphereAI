@@ -824,7 +824,128 @@
 
       <!-- Tab 1: Interactive Redlines with Diff Highlights -->
       <div x-show="studioTab === 'redlines'" class="space-y-4">
-        <template x-for="rl in activeContract?.redlines" :key="rl.id">
+        <!-- Redlines Filtering & Controls Bar -->
+        <div class="card-neo p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <!-- Left: Risk Level Filter Pills -->
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5 mr-1">
+                <i class="fa-solid fa-filter text-brand-600"></i>
+                Risk Level:
+              </span>
+              <!-- ALL -->
+              <button @click="redlineRiskFilter = 'ALL'"
+                      :class="redlineRiskFilter === 'ALL' ? 'bg-brand-600 text-white font-bold shadow-sm shadow-brand-600/30' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                      class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1.5">
+                <span>All</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-full"
+                      :class="redlineRiskFilter === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'"
+                      x-text="countRedlinesByRisk('ALL')"></span>
+              </button>
+              <!-- CRITICAL -->
+              <button @click="redlineRiskFilter = 'CRITICAL'"
+                      :class="redlineRiskFilter === 'CRITICAL' ? 'bg-red-600 text-white font-bold shadow-sm shadow-red-600/30' : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200/60'"
+                      class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1.5">
+                <span>Critical</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-full"
+                      :class="redlineRiskFilter === 'CRITICAL' ? 'bg-white/20 text-white' : 'bg-red-200 text-red-800'"
+                      x-text="countRedlinesByRisk('CRITICAL')"></span>
+              </button>
+              <!-- HIGH -->
+              <button @click="redlineRiskFilter = 'HIGH'"
+                      :class="redlineRiskFilter === 'HIGH' ? 'bg-amber-600 text-white font-bold shadow-sm shadow-amber-600/30' : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200/60'"
+                      class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1.5">
+                <span>High</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-full"
+                      :class="redlineRiskFilter === 'HIGH' ? 'bg-white/20 text-white' : 'bg-amber-200 text-amber-900'"
+                      x-text="countRedlinesByRisk('HIGH')"></span>
+              </button>
+              <!-- MEDIUM -->
+              <button @click="redlineRiskFilter = 'MEDIUM'"
+                      :class="redlineRiskFilter === 'MEDIUM' ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-600/30' : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/60'"
+                      class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1.5">
+                <span>Medium</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-full"
+                      :class="redlineRiskFilter === 'MEDIUM' ? 'bg-white/20 text-white' : 'bg-blue-200 text-blue-800'"
+                      x-text="countRedlinesByRisk('MEDIUM')"></span>
+              </button>
+              <!-- LOW -->
+              <button @click="redlineRiskFilter = 'LOW'"
+                      :class="redlineRiskFilter === 'LOW' ? 'bg-slate-700 text-white font-bold shadow-sm shadow-slate-700/30' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'"
+                      class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1.5">
+                <span>Low</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-full"
+                      :class="redlineRiskFilter === 'LOW' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-800'"
+                      x-text="countRedlinesByRisk('LOW')"></span>
+              </button>
+            </div>
+
+            <!-- Right: Decision Filter Pills -->
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5 mr-1">
+                <i class="fa-solid fa-check-double text-emerald-600"></i>
+                Decision:
+              </span>
+              <button @click="redlineDecisionFilter = 'ALL'"
+                      :class="redlineDecisionFilter === 'ALL' ? 'bg-brand-600 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                      class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
+                All (<span x-text="countRedlinesByDecision('ALL')"></span>)
+              </button>
+              <button @click="redlineDecisionFilter = 'PENDING'"
+                      :class="redlineDecisionFilter === 'PENDING' ? 'bg-slate-700 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                      class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
+                Pending (<span x-text="countRedlinesByDecision('PENDING')"></span>)
+              </button>
+              <button @click="redlineDecisionFilter = 'ACCEPTED'"
+                      :class="redlineDecisionFilter === 'ACCEPTED' ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/60'"
+                      class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
+                Accepted (<span x-text="countRedlinesByDecision('ACCEPTED')"></span>)
+              </button>
+              <button @click="redlineDecisionFilter = 'REJECTED'"
+                      :class="redlineDecisionFilter === 'REJECTED' ? 'bg-red-600 text-white font-bold shadow-sm' : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200/60'"
+                      class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
+                Rejected (<span x-text="countRedlinesByDecision('REJECTED')"></span>)
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Status Summary & Active Indicators -->
+          <div class="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100 text-slate-500">
+            <div>
+              Showing <span class="font-bold text-slate-800" x-text="filteredRedlines.length"></span> of <span class="font-bold text-slate-800" x-text="activeContract?.redlines?.length || 0"></span> redlines
+              <span x-show="redlineRiskFilter !== 'ALL'">
+                • Filtered by <span class="font-semibold text-brand-600" x-text="redlineRiskFilter"></span> risk
+              </span>
+              <span x-show="redlineDecisionFilter !== 'ALL'">
+                • Status: <span class="font-semibold text-brand-600" x-text="redlineDecisionFilter"></span>
+              </span>
+            </div>
+            <button x-show="redlineRiskFilter !== 'ALL' || redlineDecisionFilter !== 'ALL'"
+                    @click="redlineRiskFilter = 'ALL'; redlineDecisionFilter = 'ALL'"
+                    class="text-brand-600 hover:text-brand-700 font-bold flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-rotate-left text-[10px]"></i>
+              Reset filters
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty State When Filter Yields 0 Results -->
+        <div x-show="filteredRedlines.length === 0" class="card-neo p-12 text-center space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto text-xl">
+            <i class="fa-solid fa-filter-circle-xmark"></i>
+          </div>
+          <h4 class="text-sm font-bold text-slate-800">No redlines match the selected filters</h4>
+          <p class="text-xs text-slate-500 max-w-sm mx-auto">
+            Try switching to another risk level or clearing the active filter.
+          </p>
+          <button @click="redlineRiskFilter = 'ALL'; redlineDecisionFilter = 'ALL'"
+                  class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-rotate-left"></i>
+            Show All Redlines
+          </button>
+        </div>
+
+        <template x-for="rl in filteredRedlines" :key="rl.id">
           <div class="card-neo p-6 space-y-4">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-2.5">
@@ -1614,6 +1735,8 @@
         rewriteOpen: {},
         rewritePrompts: {},
         isRegenerating: {},
+        redlineRiskFilter: 'ALL',
+        redlineDecisionFilter: 'ALL',
         
         apiKeys: {
           gemini: '',
@@ -2034,11 +2157,43 @@
           }
         },
 
+        get filteredRedlines() {
+          if (!this.activeContract || !this.activeContract.redlines) return [];
+          return this.activeContract.redlines.filter(rl => {
+            const matchesRisk = this.redlineRiskFilter === 'ALL' || 
+              (rl.risk_severity && rl.risk_severity.toUpperCase() === this.redlineRiskFilter.toUpperCase());
+            const matchesDecision = this.redlineDecisionFilter === 'ALL' ||
+              (this.redlineDecisionFilter === 'ACCEPTED' && rl.accepted === true) ||
+              (this.redlineDecisionFilter === 'REJECTED' && rl.accepted === false) ||
+              (this.redlineDecisionFilter === 'PENDING' && (rl.accepted === null || rl.accepted === undefined));
+            return matchesRisk && matchesDecision;
+          });
+        },
+
+        countRedlinesByRisk(severity) {
+          if (!this.activeContract || !this.activeContract.redlines) return 0;
+          if (severity === 'ALL') return this.activeContract.redlines.length;
+          return this.activeContract.redlines.filter(rl => 
+            rl.risk_severity && rl.risk_severity.toUpperCase() === severity.toUpperCase()
+          ).length;
+        },
+
+        countRedlinesByDecision(decision) {
+          if (!this.activeContract || !this.activeContract.redlines) return 0;
+          if (decision === 'ALL') return this.activeContract.redlines.length;
+          if (decision === 'ACCEPTED') return this.activeContract.redlines.filter(rl => rl.accepted === true).length;
+          if (decision === 'REJECTED') return this.activeContract.redlines.filter(rl => rl.accepted === false).length;
+          if (decision === 'PENDING') return this.activeContract.redlines.filter(rl => rl.accepted === null || rl.accepted === undefined).length;
+          return 0;
+        },
+
         async openContract(id) {
           try {
             const res = await fetch(`/api/v1/contracts/${id}`);
             if (res.ok) {
               this.activeContract = await res.json();
+              this.redlineRiskFilter = 'ALL';
+              this.redlineDecisionFilter = 'ALL';
               this.currentView = 'studio';
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }

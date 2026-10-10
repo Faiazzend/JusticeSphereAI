@@ -1,6 +1,6 @@
 # 🏛️ ContractMind v1.5 — The Ultimate Master Architecture & Reproduction Prompt (A-Z)
 
-> **Document Version:** 1.5.1  
+> **Document Version:** 1.5.2  
 > **Target Project:** ContractMind v1.5 (Autonomous Multi-Agent Legal AI Studio)  
 > **Track:** JusticeSphere_AI — AI Builders Congress 2026  
 > **Repository:** [https://github.com/Faiazzend/JusticeSphereAI](https://github.com/Faiazzend/JusticeSphereAI)
@@ -9,7 +9,7 @@
 
 ```markdown
 You are an elite Principal AI Systems Architect and Legal Tech Engineer.
-Build "ContractMind v1.5" from scratch: an enterprise-grade, autonomous multi-agent legal intelligence platform that ingests commercial contracts, conducts adversarial negotiation debate, synthesizes consensus redlines with authentic Word Track Changes, extracts structured obligation matrices, and empowers lawyers to interactively accept/reject specific clause revisions and rewrite prompt instructions to regenerate redlines on demand.
+Build "ContractMind v1.5" from scratch: an enterprise-grade, autonomous multi-agent legal intelligence platform that ingests commercial contracts, conducts adversarial negotiation debate, synthesizes consensus redlines with authentic Word Track Changes, extracts structured obligation matrices, and empowers lawyers to filter and browse red-lined clauses by risk severity, interactively accept/reject specific clause revisions, and rewrite prompt instructions to regenerate redlines on demand.
 
 Implement the system strictly following the exact architectural specifications, data models, agent graphs, styling design system, and API protocols below.
 
@@ -26,7 +26,7 @@ TABLE OF CONTENTS
 8. Word (.docx) OpenXML Track Changes Engine (with Decision Branching)
 9. Model Context Protocol (MCP) Server
 10. Token & Cost Telemetry Engine
-11. Interactive Redline Decisions & AI Prompt Rewriting Engine
+11. Interactive Redline Decisions, AI Prompt Rewriting & Risk-Level Filtering Engine
 12. FastAPI REST API & Streaming Endpoints
 13. Frontend: Alpine.js & Tailwind Neo-Legal Studio
 14. Deployment & Production Orchestration
@@ -44,9 +44,9 @@ TABLE OF CONTENTS
   2. Opposing Counsel Agent (Counterparty negotiator, aggressive pusher)
   3. Redline Synthesizer Agent (Consensus arbiter, diff builder, composite scorer)
   4. Obligation Extractor Agent (Calendar extractor, role matrix, penalty monitor)
-- Interactive Redlining: Lawyers can accept or reject individual proposed redlines, or input custom legal prompts/instructions to regenerate specific clauses using real-time LLM synthesis and diff recomputation.
+- Interactive Redlining & Risk Triage: Lawyers can filter and browse proposed redlines by risk severity (Critical, High, Medium, Low) and decision state (Accepted, Rejected, Pending), accept or reject individual proposed redlines, or input custom legal prompts/instructions to regenerate specific clauses using real-time LLM synthesis and diff recomputation.
 - Protocol: Model Context Protocol (MCP) HTTP/JSON-RPC gateway exposing tools.
-- Frontend: Single-Page Application (SPA) built using Alpine.js 3.14, Tailwind CSS, FontAwesome 6, Plus Jakarta Sans, and JetBrains Mono. Zero React build step required for core UI. Includes an interactive 6-step guided rundown tour with high-intensity glowing halo spotlights.
+- Frontend: Single-Page Application (SPA) built using Alpine.js 3.14, Tailwind CSS, FontAwesome 6, Plus Jakarta Sans, and JetBrains Mono. Zero React build step required for core UI. Includes an interactive 7-step guided rundown tour with high-intensity glowing halo spotlights.
 - Deployment: Fully configured for both local 1-click batch execution and Vercel Multi-Service deployment.
 
 ================================================================================
@@ -337,17 +337,46 @@ Implement async `call_llm(prompt, system_prompt, provider, model_name, use_local
   Computes cost, commits `AuditLog` row to SQLite database, and returns the record.
 
 ================================================================================
-11. INTERACTIVE REDLINE DECISIONS & AI PROMPT REWRITING ENGINE
+11. INTERACTIVE REDLINE DECISIONS, AI PROMPT REWRITING & RISK-LEVEL FILTERING ENGINE
 ================================================================================
-Implement full lawyer-in-the-loop revision controls:
+Implement full lawyer-in-the-loop revision controls with risk-level browsing and on-demand synthesis:
 
-1. Accepting / Rejecting Changes:
+1. Risk-Level & Decision Status Browsing / Filtering:
+   - Purpose: Lawyers reviewing high-stakes enterprise contracts need to triage redlines efficiently—focusing immediately on Critical and High risks before reviewing moderate and minor changes.
+   - Filtering Controls:
+     - Risk Severity Filter: `ALL` (default), `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`.
+     - Decision Status Filter: `ALL` (default), `PENDING`, `ACCEPTED`, `REJECTED`.
+   - UI Architecture:
+     - Dynamic Filter Bar located directly above the redline diff stream.
+     - Interactive pills displaying live badge counts computed reactively:
+       - `All (count)`: Total redlines.
+       - `Critical (count)`: Red badge with pulsating alert.
+       - `High (count)`: Amber badge.
+       - `Medium (count)`: Blue badge.
+       - `Low (count)`: Slate/neutral badge.
+     - Decision pills displaying live status counts:
+       - `All (count)`
+       - `Pending (count)`: Slate clock icon.
+       - `Accepted (count)`: Green checkmark icon.
+       - `Rejected (count)`: Red cross icon.
+     - Live Counter & Active State Indicator:
+       "Showing X of Y redlines • Filtered by [SEVERITY] risk • Status: [DECISION]".
+     - Quick "Reset filters" action button.
+     - Friendly Empty State: If no redlines match the selected criteria, display an intuitive empty-state card with a "Show All Redlines" button to restore full view.
+   - REST API Filter Support:
+     - Endpoint: `GET /api/v1/analysis/{contract_id}/redlines`
+     - Query Parameters:
+       - `risk_severity`: Optional string (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`, `ALL`). Case-insensitive.
+       - `decision`: Optional string (`accepted`, `rejected`, `pending`, `ALL`). Case-insensitive.
+     - Logic: Returns only the matching subset of redline dictionaries.
+
+2. Accepting / Rejecting Changes:
    - Endpoint: `PATCH /api/v1/analysis/{contract_id}/redlines/{redline_id}`
    - Body: `{"accepted": true | false | null}`
    - Updates `contract.redlines` record in the database.
    - Reflected dynamically in the UI and in the Word DOCX export.
 
-2. Rewriting Prompts & Regenerating Clauses:
+3. Rewriting Prompts & Regenerating Clauses:
    - Endpoint: `POST /api/v1/analysis/{contract_id}/redlines/{redline_id}/regenerate`
    - Body: `{"custom_prompt": str, "provider": Optional[str], "model_name": Optional[str]}`
    - Logic:
@@ -387,7 +416,7 @@ Expose the following endpoints in `backend/app/main.py` and `api/v1/`:
 - `GET /api/v1/contracts/{id}`: Detailed view of contract, risks, transcript, redlines, and obligations.
 - `DELETE /api/v1/contracts/{id}`: Deletes contract row, associated audit logs, and deletes ChromaDB collection.
 - `POST /api/v1/analysis/{id}/trigger`: Triggers orchestrator execution.
-- `GET /api/v1/analysis/{id}/redlines`: Retrieves list of structured redlines.
+- `GET /api/v1/analysis/{id}/redlines`: Retrieves list of structured redlines with optional `risk_severity` and `decision` filters.
 - `PATCH /api/v1/analysis/{id}/redlines/{redline_id}`: Accepts or rejects a specific redline.
 - `POST /api/v1/analysis/{id}/redlines/{redline_id}/regenerate`: Rewrites and re-synthesizes redline from custom prompt.
 - `GET /api/v1/analysis/{id}/export/docx`: Downloads `.docx` with native Word Track Changes respecting accepted/rejected choices.
@@ -433,7 +462,13 @@ Implement `backend/static/index.html`:
        - Enterprise MSA (Risk: 65, Uncapped indemnity & caps)
        - SaaS Agreement (Risk: 50, Auto-renewal lock-in)
        - Mutual NDA (Risk: 25, Standard confidentiality)
-  5. Interactive Redlines Hub (with Accept, Reject, Reset & AI Rewriter):
+  5. Interactive Redlines Hub (with Risk Filtering, Accept, Reject, Reset & AI Rewriter):
+     - Redlines Risk & Decision Filter Toolbar:
+       - Risk Severity Filter Pills: `All`, `Critical` (red badge), `High` (amber badge), `Medium` (blue badge), and `Low` (slate badge) with reactive count indicators (`countRedlinesByRisk(sev)`).
+       - Decision Status Filter Pills: `All`, `Pending` (slate), `Accepted` (green), and `Rejected` (red) with reactive count indicators (`countRedlinesByDecision(dec)`).
+       - Filter Status Summary: Live indicator showing `"Showing X of Y redlines • Filtered by [Severity] risk • Status: [Decision]"`.
+       - Quick "Reset filters" link button.
+       - Empty State Card: When 0 clauses match the active filter, displays a clear notification with a "Show All Redlines" reset button.
      - Displays per-clause card with risk severity and legal rationale.
      - Word-level insertions rendered as `<span class="diff-ins">` (emerald background, green text, underline).
      - Word-level deletions rendered as `<span class="diff-del">` (red background, red text, strike-through).
@@ -529,4 +564,6 @@ Ensure the completed codebase satisfies all criteria:
 10. [x] MCP server conforms to JSON-RPC tools schema at /mcp/tools and /mcp/call.
 11. [x] Frontend features 7-step guided tour with glowing halo spotlight and notification bubble.
 12. [x] `npm run build` on frontend completes with zero TypeScript or lint errors.
+13. [x] Redline risk-level filtering (Critical, High, Medium, Low) and decision status filtering (Pending, Accepted, Rejected) with reactive count badges and empty-state recovery.
+14. [x] Backend endpoint `GET /api/v1/analysis/{contract_id}/redlines` supports `risk_severity` and `decision` query parameter filtering.
 ```

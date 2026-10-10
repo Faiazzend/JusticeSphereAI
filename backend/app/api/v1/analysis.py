@@ -4,7 +4,7 @@ import re
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
@@ -97,9 +97,15 @@ async def get_contract_obligations(contract_id: str, db: AsyncSession = Depends(
 
 
 @router.get("/{contract_id}/redlines", response_model=List[RedlineChange])
-async def get_contract_redlines(contract_id: str, db: AsyncSession = Depends(get_db)):
+async def get_contract_redlines(
+    contract_id: str,
+    risk_severity: Optional[str] = Query(None, description="Filter redlines by risk severity (CRITICAL, HIGH, MEDIUM, LOW)"),
+    decision: Optional[str] = Query(None, description="Filter redlines by decision status (accepted, rejected, pending)"),
+    db: AsyncSession = Depends(get_db)
+):
     """
-    Returns redlines with diff tokens, suggested modifications, and legal rationales.
+    Returns redlines with diff tokens, suggested modifications, and legal rationales,
+    with optional filtering by risk severity and decision status.
     """
     stmt = select(Contract).where(Contract.id == contract_id)
     result = await db.execute(stmt)
@@ -108,7 +114,21 @@ async def get_contract_redlines(contract_id: str, db: AsyncSession = Depends(get
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
 
-    return contract.redlines or []
+    redlines = list(contract.redlines or [])
+    if risk_severity and risk_severity.upper() != "ALL":
+        sev = risk_severity.upper()
+        redlines = [rl for rl in redlines if str(rl.get("risk_severity", "")).upper() == sev]
+
+    if decision and decision.upper() != "ALL":
+        dec = decision.lower()
+        if dec == "accepted":
+            redlines = [rl for rl in redlines if rl.get("accepted") is True]
+        elif dec == "rejected":
+            redlines = [rl for rl in redlines if rl.get("accepted") is False]
+        elif dec == "pending":
+            redlines = [rl for rl in redlines if rl.get("accepted") is None]
+
+    return redlines
 
 
 @router.patch("/{contract_id}/redlines/{redline_id}")

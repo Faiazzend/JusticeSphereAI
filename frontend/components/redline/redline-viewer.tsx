@@ -19,10 +19,16 @@ export function RedlineViewer({
 }) {
   const [viewMode, setViewMode] = useState<"unified" | "split">("unified");
   const [filterSeverity, setFilterSeverity] = useState<string>("ALL");
+  const [filterDecision, setFilterDecision] = useState<string>("ALL");
 
   const filteredRedlines = redlines.filter((rl) => {
-    if (filterSeverity === "ALL") return true;
-    return rl.risk_severity === filterSeverity;
+    const matchesSeverity = filterSeverity === "ALL" || rl.risk_severity === filterSeverity;
+    const matchesDecision =
+      filterDecision === "ALL" ||
+      (filterDecision === "ACCEPTED" && rl.accepted === true) ||
+      (filterDecision === "REJECTED" && rl.accepted === false) ||
+      (filterDecision === "PENDING" && rl.accepted === null);
+    return matchesSeverity && matchesDecision;
   });
 
   const acceptedCount = redlines.filter((rl) => rl.accepted === true).length;
@@ -73,6 +79,20 @@ export function RedlineViewer({
               <option value="HIGH">High Risk</option>
               <option value="MEDIUM">Moderate</option>
               <option value="LOW">Low Risk</option>
+            </select>
+          </div>
+
+          {/* Decision Filter */}
+          <div className="flex items-center space-x-1 bg-gray-950 px-2.5 py-1 rounded-lg border border-gray-800 text-xs">
+            <select
+              value={filterDecision}
+              onChange={(e) => setFilterDecision(e.target.value)}
+              className="bg-transparent text-gray-300 text-xs focus:outline-none cursor-pointer"
+            >
+              <option value="ALL">All Decisions</option>
+              <option value="PENDING">Pending Review ({pendingCount})</option>
+              <option value="ACCEPTED">Accepted ({acceptedCount})</option>
+              <option value="REJECTED">Rejected ({rejectedCount})</option>
             </select>
           </div>
         </div>
