@@ -108,21 +108,26 @@ class ExportService:
             severity = rl.get("risk_severity", "MEDIUM")
             rationale = rl.get("legal_rationale", "")
             tokens = rl.get("diff_tokens", [])
+            accepted = rl.get("accepted")
+            status_text = "Accepted" if accepted is True else ("Rejected" if accepted is False else "Pending Review")
 
-            h = doc.add_heading(f"Section {sec_num} [Severity: {severity}]", level=2)
+            h = doc.add_heading(f"Section {sec_num} [Severity: {severity} | Decision: {status_text}]", level=2)
 
             # Redline text paragraph
             p = doc.add_paragraph()
-            p.add_run("Redlined Text (OpenXML Revisions):\n").bold = True
-
-            if tokens:
-                for token in tokens:
-                    text_str = token.get("text", "")
-                    t_type = token.get("type", "equal")
-                    change_id_counter += 1
-                    ExportService._add_revision_token(p, text_str, t_type, change_id_counter)
+            if accepted is False:
+                p.add_run("Decision: REJECTED (Original Clause Retained):\n").bold = True
+                p.add_run(rl.get("original_text", ""))
             else:
-                p.add_run(rl.get("suggested_text", ""))
+                p.add_run(f"Decision: {status_text.upper()} (Track Changes XML Enabled):\n").bold = True
+                if tokens:
+                    for token in tokens:
+                        text_str = token.get("text", "")
+                        t_type = token.get("type", "equal")
+                        change_id_counter += 1
+                        ExportService._add_revision_token(p, text_str, t_type, change_id_counter)
+                else:
+                    p.add_run(rl.get("suggested_text", ""))
 
             # Legal rationale block
             p_rat = doc.add_paragraph()

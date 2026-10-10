@@ -1,5 +1,9 @@
 import os
-from typing import Dict, Any, List
+import json
+import re
+from datetime import datetime, timezone
+from typing import Dict, Any, List, Optional
+from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +16,8 @@ from app.schemas.contract_schemas import AnalysisTriggerRequest, RedlineChange
 from app.schemas.obligation_schemas import ObligationsResponse, ObligationItem
 from app.agents.graph import orchestrator
 from app.services.export_service import export_service
+from app.services.diff_engine import diff_engine
+from app.agents.llm_client import llm_client
 
 router = APIRouter(prefix="/analysis", tags=["Analysis & Engine"])
 
@@ -136,6 +142,113 @@ async def update_redline_status(
     contract.redlines = redlines
     await db.commit()
     return {"message": "Redline decision updated", "redline_id": redline_id, "accepted": decision.get("accepted")}
+
+
+class RedlineRegenerateRequest(BaseModel):
+    custom_prompt: str = Field(..., description="Custom rewrite prompt or legal instruction for this clause")
+    provider: Optional[str] = None
+    model_name: Optional[str] = None
+
+
+@router.post("/{contract_id}/redlines/{redline_id}/regenerate")
+async def regenerate_redline(
+    contract_id: str,
+    redline_id: str,
+    req: RedlineRegenerateRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Rewrites a specific clause redline based on user custom prompt instructions,
+    re-running synthesis and recomputing word-level diff tokens.
+    """
+    stmt = select(Contract).where(Contract.id == contract_id)
+    result = await db.execute(stmt)
+    contract = result.scalars().first()
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+
+    redlines = list(contract.redlines or [])
+    target_idx = None
+    target_rl = None
+    for idx, rl in enumerate(redlines):
+        if rl.get("id") == redline_id:
+            target_idx = idx
+            target_rl = rl
+            break
+
+    if target_rl is None:
+        raise HTTPException(status_code=404, detail="Redline not found")
+
+    sec_num = target_rl.get("section_number", "General")
+    orig_text = target_rl.get("original_text", "")
+    curr_sugg = target_rl.get("suggested_text", "")
+    severity = target_rl.get("risk_severity", "MEDIUM")
+
+    prompt = (
+        f"You are an expert corporate legal counsel and contract redline synthesizer.\n"
+        f"Original Contract Clause (Section {sec_num}):\n"
+        f"\"\"\"\n{orig_text}\n\"\"\"\n\n"
+        f"Prior Proposed Redline:\n"
+        f"\"\"\"\n{curr_sugg}\n\"\"\"\n\n"
+        f"USER CUSTOM REWRITE INSTRUCTION:\n"
+        f"\"\"\"\n{req.custom_prompt}\n\"\"\"\n\n"
+        f"Task: Rewrite the contract clause replacement strictly following the user's custom instruction.\n"
+        f"Return ONLY valid JSON in this exact structure without markdown fences:\n"
+        f"{{\n"
+        f"  \"suggested_text\": \"<exact revised clause replacement text>\",\n"
+        f"  \"legal_rationale\": \"<concise explanation of how this satisfies the user prompt>\"\n"
+        f"}}"
+    )
+
+    new_sugg = ""
+    new_rationale = ""
+    try:
+        resp_text, used_model, _ = await llm_client.call_llm(
+            prompt=prompt,
+            system_prompt="You are a senior partner synthesizing contract redlines based on precise client instructions. Return JSON only.",
+            provider=req.provider,
+            model_name=req.model_name,
+            temperature=0.2
+        )
+        if resp_text:
+            cleaned = re.sub(r"^```(?:json)?\s*", "", resp_text.strip(), flags=re.MULTILINE)
+            cleaned = re.sub(r"```$", "", cleaned.strip(), flags=re.MULTILINE)
+            parsed = json.loads(cleaned)
+            new_sugg = parsed.get("suggested_text", "").strip()
+            new_rationale = parsed.get("legal_rationale", "").strip()
+    except Exception:
+        pass
+
+    if not new_sugg:
+        new_sugg = f"{curr_sugg} [Modified per client prompt: '{req.custom_prompt}']"
+        new_rationale = f"Clause customized to incorporate client requirement: {req.custom_prompt}."
+
+    updated_diff = diff_engine.generate_clause_diff(
+        section_number=sec_num,
+        original_text=orig_text,
+        suggested_text=new_sugg,
+        severity=severity,
+        rationale=new_rationale or target_rl.get("legal_rationale", "")
+    )
+    updated_diff["id"] = redline_id
+    updated_diff["accepted"] = None
+    updated_diff["custom_prompt"] = req.custom_prompt
+
+    redlines[target_idx] = updated_diff
+    contract.redlines = redlines
+
+    # Log turn to debate transcript
+    transcript = list(contract.debate_transcript or [])
+    transcript.append({
+        "agent_name": "Client Prompt & Arbiter",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "content": f"Regenerated Section {sec_num} with prompt: \"{req.custom_prompt}\". {new_rationale}",
+        "target_clause": f"Section {sec_num}"
+    })
+    contract.debate_transcript = transcript
+
+    await db.commit()
+    return updated_diff
 
 
 @router.get("/{contract_id}/export/docx")

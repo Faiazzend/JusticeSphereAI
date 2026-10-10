@@ -1,6 +1,6 @@
 # 🏛️ ContractMind v1.5 — The Ultimate Master Architecture & Reproduction Prompt (A-Z)
 
-> **Document Version:** 1.5.0  
+> **Document Version:** 1.5.1  
 > **Target Project:** ContractMind v1.5 (Autonomous Multi-Agent Legal AI Studio)  
 > **Track:** JusticeSphere_AI — AI Builders Congress 2026  
 > **Repository:** [https://github.com/Faiazzend/JusticeSphereAI](https://github.com/Faiazzend/JusticeSphereAI)
@@ -9,7 +9,7 @@
 
 ```markdown
 You are an elite Principal AI Systems Architect and Legal Tech Engineer.
-Build "ContractMind v1.5" from scratch: an enterprise-grade, autonomous multi-agent legal intelligence platform that ingests commercial contracts, conducts adversarial negotiation debate, synthesizes consensus redlines with authentic Word Track Changes, and extracts structured obligation matrices.
+Build "ContractMind v1.5" from scratch: an enterprise-grade, autonomous multi-agent legal intelligence platform that ingests commercial contracts, conducts adversarial negotiation debate, synthesizes consensus redlines with authentic Word Track Changes, extracts structured obligation matrices, and empowers lawyers to interactively accept/reject specific clause revisions and rewrite prompt instructions to regenerate redlines on demand.
 
 Implement the system strictly following the exact architectural specifications, data models, agent graphs, styling design system, and API protocols below.
 
@@ -23,12 +23,14 @@ TABLE OF CONTENTS
 5. Contextual RAG & Semantic Chunking Engine
 6. Multi-Agent StateGraph Pipeline (4 Agents)
 7. Multi-Provider LLM Gateway & Fallback Simulator
-8. Word (.docx) OpenXML Track Changes Engine
+8. Word (.docx) OpenXML Track Changes Engine (with Decision Branching)
 9. Model Context Protocol (MCP) Server
 10. Token & Cost Telemetry Engine
-11. FastAPI REST API & Streaming Endpoints
-12. Frontend: Alpine.js & Tailwind Neo-Legal Studio
-13. Deployment & Production Orchestration
+11. Interactive Redline Decisions & AI Prompt Rewriting Engine
+12. FastAPI REST API & Streaming Endpoints
+13. Frontend: Alpine.js & Tailwind Neo-Legal Studio
+14. Deployment & Production Orchestration
+15. Verification Checklist
 
 ================================================================================
 1. HIGH-LEVEL ARCHITECTURE & TECHNICAL STACK
@@ -42,6 +44,7 @@ TABLE OF CONTENTS
   2. Opposing Counsel Agent (Counterparty negotiator, aggressive pusher)
   3. Redline Synthesizer Agent (Consensus arbiter, diff builder, composite scorer)
   4. Obligation Extractor Agent (Calendar extractor, role matrix, penalty monitor)
+- Interactive Redlining: Lawyers can accept or reject individual proposed redlines, or input custom legal prompts/instructions to regenerate specific clauses using real-time LLM synthesis and diff recomputation.
 - Protocol: Model Context Protocol (MCP) HTTP/JSON-RPC gateway exposing tools.
 - Frontend: Single-Page Application (SPA) built using Alpine.js 3.14, Tailwind CSS, FontAwesome 6, Plus Jakarta Sans, and JetBrains Mono. Zero React build step required for core UI. Includes an interactive 6-step guided rundown tour with high-intensity glowing halo spotlights.
 - Deployment: Fully configured for both local 1-click batch execution and Vercel Multi-Service deployment.
@@ -106,6 +109,7 @@ Create the following directory layout:
 ├── launch.py
 ├── run_contractmind.bat
 ├── vercel.json
+├── MASTER_PROMPT.md
 └── README.md
 
 ================================================================================
@@ -125,7 +129,7 @@ Implement async SQLAlchemy 2.0 models:
    - `extracted_sections`: JSON (list of {section_number, title, content, page_number})
    - `identified_risks`: JSON (list of risks)
    - `debate_transcript`: JSON (list of {agent_name, timestamp, content, target_clause})
-   - `redlines`: JSON (list of clause diff objects)
+   - `redlines`: JSON (list of clause diff objects containing {id, section_number, original_text, suggested_text, diff_type, risk_severity, legal_rationale, diff_tokens, accepted, custom_prompt})
    - `obligations`: JSON (list of extracted obligation dictionaries)
    - `risk_summary`: JSON (counts of critical, high, medium, low risks)
    - `created_at`: DateTime(timezone=True), default lambda: datetime.now(timezone.utc)
@@ -275,7 +279,7 @@ Implement async `call_llm(prompt, system_prompt, provider, model_name, use_local
   5. Fallback: If network fails or keys are absent, return deterministic high-caliber legal responses with latency calculation so the app never crashes.
 
 ================================================================================
-8. WORD (.DOCX) OPENXML TRACK CHANGES ENGINE
+8. WORD (.DOCX) OPENXML TRACK CHANGES ENGINE (WITH DECISION BRANCHING)
 ================================================================================
 `app/services/diff_engine.py`:
 - Use `difflib.SequenceMatcher` over word arrays.
@@ -292,7 +296,13 @@ Implement async `call_llm(prompt, system_prompt, provider, model_name, use_local
     Create `<w:ins w:id="{id}" w:author="ContractMind Legal AI" w:date="{utc_iso}">`.
     Inside, create `<w:r>`, `<w:rPr><w:u w:val="single"/><w:color w:val="16A34A"/></w:rPr>`, and `<w:t>{text}</w:t>`.
     Append to `paragraph._p`.
-- Formats executive summary table followed by each clause's original text, revision diff, and legal rationale.
+- Formats overview table displaying: Section, Severity, Redline Type, Decision Status ("Accepted", "Rejected", or "Pending Review").
+- For Detailed Clauses:
+  - Heading incorporates decision: `Section {sec_num} [Severity: {severity} | Decision: {status_text}]`.
+  - If `accepted is False` (Rejected):
+    Displays bold `Decision: REJECTED (Original Clause Retained):` and outputs the clean original text without insertions.
+  - If `accepted is True` or `None` (Accepted or Pending Review):
+    Displays bold `Decision: {STATUS} (Track Changes XML Enabled):` and injects native `<w:ins>` and `<w:del>` tokens.
 - Saves file to `settings.EXPORT_DIR` and returns the file path.
 
 ================================================================================
@@ -327,16 +337,60 @@ Implement async `call_llm(prompt, system_prompt, provider, model_name, use_local
   Computes cost, commits `AuditLog` row to SQLite database, and returns the record.
 
 ================================================================================
-11. FASTAPI REST API & STREAMING ENDPOINTS
+11. INTERACTIVE REDLINE DECISIONS & AI PROMPT REWRITING ENGINE
 ================================================================================
-Expose the following endpoints in `backend/app/main.py`:
+Implement full lawyer-in-the-loop revision controls:
+
+1. Accepting / Rejecting Changes:
+   - Endpoint: `PATCH /api/v1/analysis/{contract_id}/redlines/{redline_id}`
+   - Body: `{"accepted": true | false | null}`
+   - Updates `contract.redlines` record in the database.
+   - Reflected dynamically in the UI and in the Word DOCX export.
+
+2. Rewriting Prompts & Regenerating Clauses:
+   - Endpoint: `POST /api/v1/analysis/{contract_id}/redlines/{redline_id}/regenerate`
+   - Body: `{"custom_prompt": str, "provider": Optional[str], "model_name": Optional[str]}`
+   - Logic:
+     1. Locates target redline from `contract.redlines`.
+     2. Constructs LLM prompt:
+        ```
+        You are an expert corporate legal counsel and contract redline synthesizer.
+        Original Contract Clause (Section {sec_num}):
+        """{orig_text}"""
+
+        Prior Proposed Redline:
+        """{curr_sugg}"""
+
+        USER CUSTOM REWRITE INSTRUCTION:
+        """{req.custom_prompt}"""
+
+        Task: Rewrite the contract clause replacement strictly following the user's custom instruction.
+        Return ONLY valid JSON in this exact structure without markdown fences:
+        {
+          "suggested_text": "<exact revised clause replacement text>",
+          "legal_rationale": "<concise explanation of how this satisfies the user prompt>"
+        }
+        ```
+     3. Calls `llm_client.call_llm` with temperature 0.2.
+     4. Recomputes word-level diff tokens using `diff_engine.generate_clause_diff`.
+     5. Resets decision `accepted = None` and attaches `custom_prompt`.
+     6. Appends a new turn to `contract.debate_transcript` tagged as `agent_name: "Client Prompt & Arbiter"`.
+     7. Commits to DB and returns the updated redline object to the client.
+
+================================================================================
+12. FASTAPI REST API & STREAMING ENDPOINTS
+================================================================================
+Expose the following endpoints in `backend/app/main.py` and `api/v1/`:
 - `POST /api/v1/contracts/upload`: Multi-part PDF upload, extracts sections, indexes into ChromaDB, creates contract row.
 - `POST /api/v1/contracts/demo/{sample_type}`: Instant load & auto-analysis of benchmark contracts (`ma`, `cloud_dpa`, `joint_ip`, `msa`, `saas`, `nda`). Accepts `llm_provider`, `model_name`, and `playbook` query params.
 - `GET /api/v1/contracts/`: List all analyzed contracts ordered by `created_at DESC`.
 - `GET /api/v1/contracts/{id}`: Detailed view of contract, risks, transcript, redlines, and obligations.
 - `DELETE /api/v1/contracts/{id}`: Deletes contract row, associated audit logs, and deletes ChromaDB collection.
 - `POST /api/v1/analysis/{id}/trigger`: Triggers orchestrator execution.
-- `GET /api/v1/analysis/{id}/export/docx`: Downloads `.docx` with native Word Track Changes.
+- `GET /api/v1/analysis/{id}/redlines`: Retrieves list of structured redlines.
+- `PATCH /api/v1/analysis/{id}/redlines/{redline_id}`: Accepts or rejects a specific redline.
+- `POST /api/v1/analysis/{id}/redlines/{redline_id}/regenerate`: Rewrites and re-synthesizes redline from custom prompt.
+- `GET /api/v1/analysis/{id}/export/docx`: Downloads `.docx` with native Word Track Changes respecting accepted/rejected choices.
 - `GET /api/v1/analysis/audit/summary`: Computes total tokens, total cost USD, average latency ms, and execution breakdown.
 - `DELETE /api/v1/analysis/audit/reset`: Clears all audit log telemetry records.
 - `GET /api/v1/analysis/llm/config`: Checks status of Gemini key, Ollama endpoint, OpenAI key, and Anthropic key.
@@ -345,7 +399,7 @@ Expose the following endpoints in `backend/app/main.py`:
 - `GET /` & `GET /studio`: Serves `backend/static/index.html`.
 
 ================================================================================
-12. FRONTEND: ALPINE.JS & TAILWIND NEO-LEGAL STUDIO
+13. FRONTEND: ALPINE.JS & TAILWIND NEO-LEGAL STUDIO
 ================================================================================
 Implement `backend/static/index.html`:
 - Typography: Plus Jakarta Sans (body, headers), JetBrains Mono (badges, metrics, diff tokens).
@@ -370,13 +424,7 @@ Implement `backend/static/index.html`:
        - Screen dims with backdrop blur (`fixed inset-0 bg-slate-950/50`).
        - Targeted element receives `.tour-spotlight-active` with intense pulsing halo:
          `box-shadow: 0 0 0 11px rgba(91, 103, 246, 0.8), 0 0 70px rgba(91, 103, 246, 0.8)`.
-       - Floating tour dialog advances through 6 steps with Next, Back, and Skip controls:
-         Step 1: Top Navigation & Online Engine Indicator
-         Step 2: Instant Pre-Loaded Benchmark Contracts
-         Step 3: PDF Document Ingestion Dropzone
-         Step 4: Real-time Multi-Agent Cyclic Debate Stream
-         Step 5: Word-Level Redlines & OpenXML Word Export
-         Step 6: Structured Obligations Matrix & Compliance Calendar
+       - Floating tour dialog advances through 7 steps with Next, Back, and Skip controls.
   4. Benchmark Contracts Hub:
      - 6 one-click cards with preset risk badges:
        - Cross-Border M&A (Risk: 87, Tipping baskets & IP trap)
@@ -385,26 +433,42 @@ Implement `backend/static/index.html`:
        - Enterprise MSA (Risk: 65, Uncapped indemnity & caps)
        - SaaS Agreement (Risk: 50, Auto-renewal lock-in)
        - Mutual NDA (Risk: 25, Standard confidentiality)
-  5. Multi-Agent Debate Feed:
-     - Displays chronological debate turns with distinct agent badges, timestamps, and message cards.
-  6. Redline Synthesizer View:
+  5. Interactive Redlines Hub (with Accept, Reject, Reset & AI Rewriter):
+     - Displays per-clause card with risk severity and legal rationale.
      - Word-level insertions rendered as `<span class="diff-ins">` (emerald background, green text, underline).
      - Word-level deletions rendered as `<span class="diff-del">` (red background, red text, strike-through).
-     - "Export Word Track Changes (.docx)" button triggering direct file download.
-  7. Obligations Matrix:
-     - Tabular layout with columns: Type, Obligor, Recipient, Due Date / Trigger, Recurrence, and Penalty for Breach.
+     - Decision Badges:
+       - Green badge: `<i class="fa-solid fa-circle-check"></i> Accepted`
+       - Red badge: `<i class="fa-solid fa-circle-xmark"></i> Rejected`
+       - Slate badge: `<i class="fa-regular fa-clock"></i> Pending Review`
+     - Action Toolbar:
+       - **Accept** button: toggles `accepted = true`, calls `PATCH` endpoint, turns solid green.
+       - **Reject** button: toggles `accepted = false`, calls `PATCH` endpoint, turns solid red.
+       - **Reset** button: clears choice back to pending review.
+       - **Rewrite with AI Prompt** button: expands inline AI prompt rewriter panel.
+     - Inline AI Prompt Rewriter Panel:
+       - Custom input box: `x-model="rewritePrompts[rl.id]"` with placeholder `"e.g. Make mutual, cap liability at $1M, add 15-day cure window..."`.
+       - Quick instruction chips:
+         - `+ Make Mutual`
+         - `+ 1x Annual Cap`
+         - `+ 30-Day Cure`
+         - `+ Strike AI Training`
+       - **Regenerate Redline** button: executes `POST .../regenerate`, triggers spinner, re-synthesizes clause and diff tokens live.
+     - "Export Word Track Changes (.docx)" button triggering direct file download reflecting decisions.
+  6. Obligations Matrix:
+     - Tabular layout with columns: Citation, Category, Obligor, Recipient, Trigger/Due Date, Recurrence, and Penalty.
      - Critical items marked with red alert badges.
-  8. Telemetry & Audits Dashboard:
+  7. Telemetry & Audits Dashboard:
      - KPI cards: Total Tokens Processed, Total Cloud Cost USD, Average Node Latency, Active LLM Core.
      - Execution log table with agent name, prompt/completion tokens, latency, cost, and timestamps.
      - "Reset Metrics" button with confirmation modal.
-  9. Settings & API Keys Modal:
+  8. Settings & API Keys Modal:
      - Inputs for Gemini API Key, OpenAI API Key, Anthropic API Key, and Ollama Base URL.
      - Radio selector for LLM Provider (Google Gemini, Local Ollama, OpenAI GPT-4o, Anthropic Claude).
      - Radio selector for Negotiation Playbook (Strict Enterprise, Balanced Commercial, Founder Friendly).
 
 ================================================================================
-13. DEPLOYMENT & PRODUCTION ORCHESTRATION
+14. DEPLOYMENT & PRODUCTION ORCHESTRATION
 ================================================================================
 1. Local 1-Click Launch:
    - `run_contractmind.bat`: Checks for Python, installs requirements, executes `python launch.py`.
@@ -447,20 +511,22 @@ Implement `backend/static/index.html`:
 3. Frontend Next.js Bridge (`frontend/app/route.ts`):
    - Implements dynamic GET route handler that reads `frontend/public/index.html` (the identical Alpine.js v1.5 UI) and returns it with `Content-Type: text/html`.
    - `frontend/next.config.js` redirects `/audit` and `/contracts/*` to `/`, and rewrites `/api/v1/*` to `BACKEND_URL`.
-   - This guarantees that whether deployed on Vercel as a multi-service project, as a standalone Next.js project, or run locally, users always receive the latest ContractMind v1.5 Studio.
+   - Guarantees that whether deployed on Vercel as a multi-service project, as a standalone Next.js project, or run locally, users always receive the latest ContractMind v1.5 Studio.
 
 ================================================================================
-VERIFICATION CHECKLIST
+15. VERIFICATION CHECKLIST
 ================================================================================
 Ensure the completed codebase satisfies all criteria:
 1. [x] Zero hardcoded API keys in tracked files (use .env.example).
 2. [x] PyMuPDF table parser generates valid Markdown tables.
 3. [x] PII redactor removes SSNs, credit cards, bank accounts before embedding.
 4. [x] ChromaDB indices are purged on contract deletion.
-5. [x] DOCX export creates genuine OpenXML <w:ins> and <w:del> Track Changes tags that work in Word.
-6. [x] Real measured time.time() latency logged for all agent nodes.
-7. [x] Token pricing correctly applies to Gemini, OpenAI, Claude, and Ollama.
-8. [x] MCP server conforms to JSON-RPC tools schema at /mcp/tools and /mcp/call.
-9. [x] Frontend features 6-step guided tour with glowing halo spotlight and notification bubble.
-10. [x] `npm run build` on frontend completes with zero TypeScript or lint errors.
+5. [x] Clause-level Accept / Reject decisions persist via PATCH endpoint and update UI state.
+6. [x] Clause-level AI Prompt Rewriting endpoint generates custom redlines with live diff tokens.
+7. [x] DOCX export reflects Accept / Reject decisions in summary table and detailed clause headings.
+8. [x] Real measured time.time() latency logged for all agent nodes.
+9. [x] Token pricing correctly applies to Gemini, OpenAI, Claude, and Ollama.
+10. [x] MCP server conforms to JSON-RPC tools schema at /mcp/tools and /mcp/call.
+11. [x] Frontend features 7-step guided tour with glowing halo spotlight and notification bubble.
+12. [x] `npm run build` on frontend completes with zero TypeScript or lint errors.
 ```

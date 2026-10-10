@@ -1,0 +1,57 @@
+STRATEGIC AI JOINT DEVELOPMENT & IP LICENSING AGREEMENT
+Synapse BioMedical AI Inc & Orion Therapeutics International plc | $45,000,000 R&D Alliance
+
+=== RECITALS AND STRATEGIC ALLIANCE FRAMEWORK ===
+This STRATEGIC AI JOINT DEVELOPMENT, IP CROSS-LICENSING AND COMMERCIALIZATION AGREEMENT (this 'Agreement') is executed as of December 1, 2026, by and between Synapse BioMedical AI Inc., a Delaware corporation with principal laboratories in Cambridge, Massachusetts ('Developer'), and Orion Therapeutics International plc, a public limited company registered in England and Wales, with headquarters in London, UK ('Sponsor'). WHEREAS, Developer possesses proprietary deep learning generative diffusion models for macromolecular biological folding; and WHEREAS, Sponsor possesses world-class clinical oncology compounds, biochemical validation wet-labs, and global regulatory distribution networks; and WHEREAS, Developer and Sponsor desire to establish a multi-year collaborative research program to co-develop de novo oncology drug candidates, with an aggregate joint research budget of FORTY-FIVE MILLION DOLLARS ($45,000,000 USD).
+
+=== SECTION 1. JOINT DEVELOPMENT PROGRAM AND STEERING COMMITTEE ===
+1.1 Joint Development Program. The parties shall collaborate in good faith to execute the Research Plan outlined in Exhibit A. Developer shall commit thirty (30) full-time equivalent ('FTE') dedicated machine learning research scientists, and Sponsor shall fund all agreed FTE expenses at the rate of $450,000 USD per FTE per calendar year. 
+1.2 Joint Steering Committee (JSC). The alliance shall be governed by a Joint Steering Committee composed of three (3) voting representatives appointed by Developer and three (3) voting representatives appointed by Sponsor. All decisions of the JSC must be by unanimous consent. In the event of a deadlocked vote lasting more than twenty (20) business days, the dispute shall be escalated to the Chief Executive Officers of Developer and Sponsor for good faith resolution.
+
+=== SECTION 2. ALLOCATION OF INTELLECTUAL PROPERTY RIGHTS ===
+2.1 Background Intellectual Property. Each party shall retain sole and exclusive ownership of all right, title, and interest in and to its pre-existing Background IP developed prior to the effective date or outside the scope of this Agreement. Developer retains exclusive title to its core foundational bio-diffusion neural architecture and training weights. 
+2.2 Foreground Project IP and Joint Ownership (CRITICAL TRAP). All inventions, software models, chemical structures, and patentable discoveries conceived or reduced to practice jointly by the parties in performance of the Research Plan ('Foreground IP') shall be owned jointly by Developer and Sponsor. Either party may freely exploit, manufacture, commercialize, or non-exclusively license such Joint Foreground IP worldwide without obtaining the consent of, or accounting for any royalties or profits to, the other party. 
+2.3 Grant-Back License. Sponsor hereby grants Developer a non-exclusive, perpetual, worldwide, irrevocable license to practice and incorporate all Improvements made to Developer's Background IP across all non-therapeutic computational applications.
+
+=== SECTION 3. COMMERCIALIZATION LICENSES AND EXCLUSIVE FIELD OF USE ===
+3.1 Sponsor Exclusive Commercial License. Developer hereby grants Sponsor a worldwide, exclusive, royalty-bearing license under Developer's interest in the Foreground IP to develop, manufacture, obtain regulatory approval for, and commercialize therapeutic drug candidates solely within the field of human oncology and immuno-therapeutics (the 'Exclusive Field'). 
+3.2 Developer Retained Fields. Developer retains all rights to exploit the Foreground IP, algorithmic frameworks, and screening software in all fields outside human therapeutics, including agricultural biotechnology, industrial enzyme synthesis, and diagnostic imaging algorithms.
+
+=== SECTION 4. FINANCIAL MILESTONE PAYMENTS AND TIERED ROYALTIES ===
+4.1 Development Milestone Payments. In consideration of Developer's R&D contributions, Sponsor shall pay Developer the following non-refundable milestone payments within thirty (30) days of verified achievement: (a) $5,000,000 USD upon successful in-silico validation and hit-to-lead confirmation of three (3) kinase inhibitor candidates (Phase I); (b) $15,000,000 USD upon acceptance of the first Investigational New Drug ('IND') application by the US FDA or EMA (Phase II); and (c) $25,000,000 USD upon completion of successful Phase II human clinical trials. 
+4.2 Net Sales Commercial Royalties. Sponsor shall pay Developer tiered royalties on global annual Net Sales of commercialized therapeutic products: (i) 4.0% on portion of annual Net Sales up to $500,000,000 USD; and (ii) 6.5% on portion of annual Net Sales exceeding $500,000,000 USD. 
+4.3 Reporting and Audit Rights. Sponsor shall deliver quarterly royalty statements within forty-five (45) days following each calendar quarter. Any late remittance shall bear interest at 1.0% per month. Developer may conduct an annual audit of Sponsor's books and sales records upon twenty (20) business days written notice. If an underpayment exceeding 5% is revealed, Sponsor shall reimburse Developer for all reasonable out-of-pocket audit costs.
+
+=== SECTION 5. SOURCE CODE AND TECHNOLOGY ESCROW ===
+5.1 Technology Escrow Deposit. Within thirty (30) days following the Effective Date, Developer shall deposit a copy of all current source code, algorithmic hyperparameters, training recipes, and model weights into escrow with Iron Mountain Intellectual Property Management Inc. (the 'Escrow Agent'). Developer shall deposit updated releases on a quarterly basis. 
+5.2 Escrow Release Triggers. The Escrow Agent shall release the deposited materials to Sponsor solely upon the occurrence of: (a) Developer filing a petition in bankruptcy or insolvency; (b) Developer ceasing normal business operations; or (c) Developer's material failure to provide required technical support following thirty (30) days notice and failure to cure.
+
+=== SECTION 6. REPRESENTATIONS, WARRANTIES AND FREEDOM TO OPERATE ===
+6.1 Developer IP Representations. Developer represents and warrants that: (a) it possesses all necessary power and authority to enter into this Agreement; (b) the Background IP is free and clear of all liens and encumbrances; and (c) no portion of the neural folding algorithms utilizes or embeds open source software subject to viral or copyleft licenses (including GNU GPL, AGPL, or SSPL). 
+6.2 Freedom to Operate Disclaimer. EXCEPT AS EXPRESSLY SET FORTH HEREIN, NEITHER PARTY MAKES ANY REPRESENTATION OR WARRANTY THAT THE MANUFACTURE, USE, SALE, OR IMPORTATION OF ANY DRUG CANDIDATE WILL NOT INFRINGE VALID PATENT RIGHTS OF ANY THIRD PARTY.
+
+=== SECTION 7. PATENT PROSECUTION AND ENFORCEMENT COVENANTS ===
+7.1 Joint Patent Prosecution. The parties shall jointly direct the filing, prosecution, and maintenance of all patent applications covering Foreground IP, using mutually agreed patent counsel. All official filing fees and prosecution expenses shall be shared equally fifty percent (50%) by Developer and fifty percent (50%) by Sponsor. 
+7.2 Enforcement Against Third-Party Infringers. In the event of suspected third-party patent infringement within the Exclusive Field, Sponsor shall have the first right, but not the obligation, to initiate legal proceedings at its sole expense. If Sponsor recovers damages or monetary settlements, Sponsor shall retain all recoveries after deducting reasonable litigation expenses, paying Developer a royalty equivalent on remaining net proceeds.
+
+=== SECTION 8. REGULATORY COMPLIANCE AND EXPORT CONTROL (EAR/ITAR) ===
+8.1 Export Control Regulations. The algorithmic models and biological datasets developed hereunder are subject to US Export Administration Regulations (15 C.F.R. Parts 730-774) and potentially the International Traffic in Arms Regulations (ITAR). Neither party shall export, re-export, or transfer any technical data or AI software to restricted entities or embargoed nations without first obtaining all required US Department of Commerce export licenses. 
+8.2 Dual-Use Biological AI Oversight. The parties agree to establish an internal Bio-Safety Review Board to review all macromolecular diffusion models to ensure compliance with international biosecurity standards preventing the accidental generation of toxic compounds.
+
+=== SECTION 9. TERM, TERMINATION AND POST-TERMINATION LICENSES ===
+9.1 Term. This Agreement shall commence on December 1, 2026 and continue for an initial research term of seven (7) years, unless terminated earlier pursuant to this Section 9. 
+9.2 Termination for Cause. Either party may terminate this Agreement upon sixty (60) days written notice if the other party commits a material breach of its obligations and fails to cure such breach within the 60-day notice period. 
+9.3 Termination for Sponsor Breach. If Developer terminates this Agreement for Sponsor's uncured material breach: (a) all licenses granted to Sponsor under Section 3 shall immediately terminate; (b) Sponsor shall assign all of its interest in Joint Foreground IP to Developer; and (c) all unpaid milestone payments for achieved phases shall accelerate and become immediately due.
+
+=== SECTION 10. GOVERNING LAW AND JAMS ARBITRATION ===
+10.1 Governing Law. This Agreement shall be governed by, and construed in accordance with, the laws of the Commonwealth of Massachusetts, United States, without regard to principles of conflicts of law. 
+10.2 Binding JAMS Arbitration. Any dispute, claim, or controversy arising out of or relating to this Agreement shall be determined by final and binding arbitration administered by JAMS in Boston, Massachusetts, pursuant to its Comprehensive Arbitration Rules and Procedures. The arbitration shall be conducted before a panel of three (3) neutral arbitrators with at least ten (10) years experience in biotechnology and intellectual property law. Judgment upon the award may be entered in any court of competent jurisdiction.
+
+=== EXHIBIT A. RESEARCH PLAN AND MILESTONE ACCEPTANCE CRITERIA ===
+Phase I: Algorithmic Target Discovery & Binding Affinity Prediction (Months 1-18)
+- Milestone 1.1: Train bio-diffusion model on 10M synthetic peptide conformations.
+- Milestone 1.2: Identify 3 hit molecules with sub-nanomolar IC50 binding affinity.
+Phase II: In Vitro Wet-Lab Synthesis and Animal Model Validation (Months 19-42)
+- Milestone 2.1: Synthesize 500 mg active pharmaceutical ingredient (API).
+- Milestone 2.2: Achieve 80% tumor regression in xenograft murine models without acute toxicity.
+Phase III: IND Submission & Clinical Trial Phase I Authorization (Months 43-60)

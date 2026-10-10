@@ -832,6 +832,16 @@
                 <span class="text-[10px] font-mono px-2.5 py-0.5 rounded-full font-bold"
                       :class="rl.risk_severity === 'CRITICAL' ? 'bg-red-50 text-red-600 border border-red-200' : rl.risk_severity === 'HIGH' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-blue-50 text-blue-700 border border-blue-200'"
                       x-text="rl.risk_severity"></span>
+                <!-- Decision Badge -->
+                <span x-show="rl.accepted === true" class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                  <i class="fa-solid fa-circle-check"></i> Accepted
+                </span>
+                <span x-show="rl.accepted === false" class="bg-red-50 text-red-700 border border-red-200 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                  <i class="fa-solid fa-circle-xmark"></i> Rejected
+                </span>
+                <span x-show="rl.accepted === null || rl.accepted === undefined" class="bg-slate-100 text-slate-500 border border-slate-200 text-[10px] font-mono px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                  <i class="fa-regular fa-clock"></i> Pending Review
+                </span>
               </div>
               <span class="text-xs text-slate-500 italic max-w-lg truncate" x-text="rl.legal_rationale"></span>
             </div>
@@ -855,6 +865,70 @@
                   <p class="diff-ins block" x-text="rl.suggested_text"></p>
                 </div>
               </template>
+            </div>
+
+            <!-- Action Toolbar: Accept, Reject, Reset & AI Prompt Rewriter -->
+            <div class="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
+              <!-- Accept / Reject Buttons -->
+              <div class="flex items-center space-x-2">
+                <button @click="updateRedlineDecision(rl, true)"
+                        :class="rl.accepted === true ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200 hover:border-emerald-300 hover:text-emerald-700'"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                  <i class="fa-solid fa-check"></i>
+                  <span>Accept</span>
+                </button>
+                <button @click="updateRedlineDecision(rl, false)"
+                        :class="rl.accepted === false ? 'bg-red-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200 hover:border-red-300 hover:text-red-700'"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                  <i class="fa-solid fa-xmark"></i>
+                  <span>Reject</span>
+                </button>
+                <button x-show="rl.accepted !== null && rl.accepted !== undefined"
+                        @click="updateRedlineDecision(rl, null)"
+                        class="px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-700 cursor-pointer">
+                  Reset
+                </button>
+              </div>
+
+              <!-- AI Prompt Rewriter Toggle -->
+              <button @click="toggleRewrite(rl.id)"
+                      :class="rewriteOpen[rl.id] ? 'bg-brand-600 text-white shadow-sm' : 'bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100'"
+                      class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span x-text="rewriteOpen[rl.id] ? 'Close Rewriter' : 'Rewrite with AI Prompt'"></span>
+              </button>
+            </div>
+
+            <!-- Expandable AI Prompt Rewriter Panel -->
+            <div x-show="rewriteOpen[rl.id]" class="p-4 rounded-2xl bg-brand-50/50 border border-brand-200/80 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <i class="fa-solid fa-pen-nib text-brand-600"></i>
+                  Custom Legal Rewrite Instruction
+                </span>
+                <span class="text-[10px] text-slate-500 font-mono">Press Enter or click Regenerate</span>
+              </div>
+              <div class="flex gap-2">
+                <input type="text"
+                       x-model="rewritePrompts[rl.id]"
+                       @keyup.enter="regenerateClause(rl)"
+                       placeholder="e.g. Make mutual, cap liability at $1M, add 15-day cure notice..."
+                       class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-800 bg-white focus:outline-none focus:border-brand-600">
+                <button @click="regenerateClause(rl)"
+                        :disabled="isRegenerating[rl.id]"
+                        class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50">
+                  <i :class="isRegenerating[rl.id] ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-rotate-right'"></i>
+                  <span x-text="isRegenerating[rl.id] ? 'Synthesizing...' : 'Regenerate'"></span>
+                </button>
+              </div>
+              <!-- Quick Preset Instruction Chips -->
+              <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mr-1">Presets:</span>
+                <button type="button" @click="rewritePrompts[rl.id] = 'Make mutual and reciprocal with equal liability caps'" class="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-600 cursor-pointer">+ Make Mutual</button>
+                <button type="button" @click="rewritePrompts[rl.id] = 'Cap aggregate liability at 1x annual contract value with 5x super-cap'" class="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-600 cursor-pointer">+ 1x Annual Cap</button>
+                <button type="button" @click="rewritePrompts[rl.id] = 'Institute mandatory 30-day written notice and cure window'" class="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-600 cursor-pointer">+ 30-Day Cure</button>
+                <button type="button" @click="rewritePrompts[rl.id] = 'Strike foundation model training rights and mandate strict data isolation'" class="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-600 cursor-pointer">+ Strike AI Training</button>
+              </div>
             </div>
           </div>
         </template>
@@ -1537,6 +1611,9 @@
         uploading: false,
         currentStep: 0,
         isDragging: false,
+        rewriteOpen: {},
+        rewritePrompts: {},
+        isRegenerating: {},
         
         apiKeys: {
           gemini: '',
@@ -1903,6 +1980,57 @@
             }
           } catch (e) {
             alert('Error resetting metrics: ' + e.message);
+          }
+        },
+
+        toggleRewrite(id) {
+          this.rewriteOpen[id] = !this.rewriteOpen[id];
+        },
+
+        async updateRedlineDecision(rl, decision) {
+          try {
+            rl.accepted = decision;
+            const res = await fetch(`/api/v1/analysis/${this.activeContract.id}/redlines/${rl.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ accepted: decision })
+            });
+            if (!res.ok) throw new Error('Failed to update decision');
+          } catch (e) {
+            console.error('Error updating redline decision:', e);
+          }
+        },
+
+        async regenerateClause(rl) {
+          const promptText = (this.rewritePrompts[rl.id] || '').trim();
+          if (!promptText) {
+            alert('Please enter rewrite prompt instructions for this clause.');
+            return;
+          }
+          this.isRegenerating[rl.id] = true;
+          try {
+            const res = await fetch(`/api/v1/analysis/${this.activeContract.id}/redlines/${rl.id}/regenerate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                custom_prompt: promptText,
+                provider: this.selectedProvider,
+                model_name: this.selectedProvider === 'gemini' ? 'gemini-3.5-flash-lite' : (this.selectedProvider === 'ollama' ? (this.llmStatus.ollama_models?.[0] || 'qwen3.5:4b') : '')
+              })
+            });
+            if (!res.ok) throw new Error('Regeneration failed');
+            const updated = await res.json();
+            Object.assign(rl, updated);
+            const contractRes = await fetch(`/api/v1/contracts/${this.activeContract.id}`);
+            if (contractRes.ok) {
+              const fullData = await contractRes.json();
+              this.activeContract.debate_transcript = fullData.debate_transcript;
+            }
+            this.rewriteOpen[rl.id] = false;
+          } catch (e) {
+            alert('Error regenerating redline: ' + e.message);
+          } finally {
+            this.isRegenerating[rl.id] = false;
           }
         },
 
