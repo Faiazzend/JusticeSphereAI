@@ -324,6 +324,7 @@ async def export_contract_docx(id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/{id}/export/ics")
+@router.get("/{id}/export/calendar")
 async def export_contract_ics(id: str, db: AsyncSession = Depends(get_db)):
     """Generate RFC 5545 iCalendar (.ics) file containing all extracted contract obligations."""
     stmt = select(Contract).where(Contract.id == id)

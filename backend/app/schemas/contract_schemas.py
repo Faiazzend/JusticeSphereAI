@@ -94,9 +94,21 @@ class LLMHealthResponse(BaseModel):
     providers: Dict[str, ProviderHealth]
 
 
+from pydantic import BaseModel, Field, ConfigDict, model_validator
+
+
 class ContractCompareRequest(BaseModel):
-    base_contract_id: str
+    base_contract_id: Optional[str] = None
+    source_contract_id: Optional[str] = None
     target_contract_id: str
+
+    @model_validator(mode="after")
+    def resolve_base_id(self):
+        if not self.base_contract_id and not self.source_contract_id:
+            raise ValueError("Either base_contract_id or source_contract_id must be provided")
+        if not self.base_contract_id:
+            self.base_contract_id = self.source_contract_id
+        return self
 
 
 class SectionDiffItem(BaseModel):
@@ -114,3 +126,7 @@ class ContractCompareResponse(BaseModel):
     target_risk_score: float
     risk_score_delta: float
     sections: List[SectionDiffItem]
+    source_id: Optional[str] = None
+    source_title: Optional[str] = None
+    source_risk_score: Optional[float] = None
+    risk_delta: Optional[float] = None

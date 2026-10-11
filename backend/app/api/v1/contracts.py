@@ -32,7 +32,17 @@ SAMPLE_BENCHMARKS = {
         "file": "cross_border_ma.txt",
         "playbook": "Strict Enterprise Playbook",
     },
+    "cross_border_ma": {
+        "title": "Cross-Border Tech M&A Agreement",
+        "file": "cross_border_ma.txt",
+        "playbook": "Strict Enterprise Playbook",
+    },
     "cloud_dpa": {
+        "title": "Enterprise Cloud & AI Data Processing Agreement",
+        "file": "cloud_ai_dpa.txt",
+        "playbook": "Standard Corporate Playbook",
+    },
+    "cloud_ai_dpa": {
         "title": "Enterprise Cloud & AI Data Processing Agreement",
         "file": "cloud_ai_dpa.txt",
         "playbook": "Standard Corporate Playbook",
@@ -42,7 +52,17 @@ SAMPLE_BENCHMARKS = {
         "file": "ai_joint_rd.txt",
         "playbook": "Strict Enterprise Playbook",
     },
+    "ai_joint_rd": {
+        "title": "Autonomous AI Joint R&D & IP License",
+        "file": "ai_joint_rd.txt",
+        "playbook": "Strict Enterprise Playbook",
+    },
     "msa": {
+        "title": "Master Services Agreement (MSA)",
+        "file": "enterprise_msa.txt",
+        "playbook": "Standard Corporate Playbook",
+    },
+    "enterprise_msa": {
         "title": "Master Services Agreement (MSA)",
         "file": "enterprise_msa.txt",
         "playbook": "Standard Corporate Playbook",
@@ -52,7 +72,17 @@ SAMPLE_BENCHMARKS = {
         "file": "saas_agreement.txt",
         "playbook": "Balanced Commercial Playbook",
     },
+    "saas_agreement": {
+        "title": "Enterprise SaaS Subscription Agreement",
+        "file": "saas_agreement.txt",
+        "playbook": "Balanced Commercial Playbook",
+    },
     "nda": {
+        "title": "Mutual Non-Disclosure Agreement",
+        "file": "mutual_nda.txt",
+        "playbook": "Founder Friendly Playbook",
+    },
+    "mutual_nda": {
         "title": "Mutual Non-Disclosure Agreement",
         "file": "mutual_nda.txt",
         "playbook": "Founder Friendly Playbook",
@@ -301,6 +331,10 @@ async def compare_contracts(
         target_risk_score=tgt_c.overall_risk_score or 0.0,
         risk_score_delta=risk_delta,
         sections=diff_items,
+        source_id=base_c.id,
+        source_title=base_c.title,
+        source_risk_score=base_c.overall_risk_score or 0.0,
+        risk_delta=risk_delta,
     )
 
 
