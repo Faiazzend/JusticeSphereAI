@@ -18,6 +18,7 @@ router = APIRouter()
 
 
 @router.get("/{id}")
+@router.get("/debate/{id}")
 async def stream_analysis(id: str):
     """
     Stream live agent debate events via SSE with real-time queue subscription,
