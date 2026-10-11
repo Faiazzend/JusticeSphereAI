@@ -1,0 +1,8 @@
+SECTION 1. SUBSCRIPTION AND AUTO-RENEWAL
+1.1 Auto-Renewal Lock-In. The subscription term shall automatically renew for successive two-year periods unless Customer provides written notice of non-renewal at least 180 days prior to expiration. Fees increase by 10% per renewal term.
+
+SECTION 2. TERMINATION AND CURE
+2.1 Default. In the event of breach, Vendor may effect immediate termination without any cure period.
+
+SECTION 3. SERVICE CREDITS
+3.1 Exclusive Remedy. SLA credits shall be the exclusive financial remedy for downtime.

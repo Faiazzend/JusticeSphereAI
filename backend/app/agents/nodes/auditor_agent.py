@@ -1,184 +1,242 @@
 import re
-import uuid
+import time
 from datetime import datetime, timezone
 from typing import Dict, Any, List
+
 from app.agents.state import ContractReviewState
 from app.agents.llm_client import llm_client
+from app.core.token_tracker import token_tracker
+from app.database import AsyncSessionLocal
 
 
-async def auditor_node(state: ContractReviewState) -> Dict[str, Any]:
+RISK_CATEGORIES = [
+    {
+        "category": "AI Training & Data Privacy",
+        "severity": "CRITICAL",
+        "score": 95.0,
+        "pattern": re.compile(
+            r"(ingest, de-identify|foundational ai models|prompts|model checkpoints|training, tuning|training data|sub-processor)",
+            re.IGNORECASE,
+        ),
+        "rationale": "Authorizes unilateral extraction of confidential data to train foundational models without customer opt-out or isolation safeguards.",
+        "mitigation": "Insert explicit AI data quarantine clause prohibiting training or retention beyond transient inference.",
+    },
+    {
+        "category": "Indemnification & Baskets",
+        "severity": "CRITICAL",
+        "score": 88.0,
+        "pattern": re.compile(
+            r"(indemnif\w+|hold harmless|tipping basket|de minimis threshold|basket)",
+            re.IGNORECASE,
+        ),
+        "rationale": "Imposes first-dollar tipping basket exposure and broad indemnification obligations without mutual defense rights.",
+        "mitigation": "Convert tipping basket to true deductible threshold and cap aggregate indemnification at fees paid over preceding 12 months.",
+    },
+    {
+        "category": "Representations & Warranties",
+        "severity": "CRITICAL",
+        "score": 85.0,
+        "pattern": re.compile(
+            r"(actual knowledge of the chief executive|without any duty of reasonable inquiry|does not warrant.*infringe|freedom to operate)",
+            re.IGNORECASE,
+        ),
+        "rationale": "Severely dilutes counterparty warranties with an unverified actual-knowledge qualifier, waiving inquiry into known IP encumbrances.",
+        "mitigation": "Remove executive actual-knowledge limitation; require warranty after reasonable due inquiry of key officers and technical leads.",
+    },
+    {
+        "category": "IP Ownership & Commercialization",
+        "severity": "HIGH",
+        "score": 82.0,
+        "pattern": re.compile(
+            r"(jointly by developer and sponsor|without obtaining the consent of, or accounting|grant-back|irrevocably assigns|foreground ip)",
+            re.IGNORECASE,
+        ),
+        "rationale": "Assigns foreground intellectual property without accounting or consent, permitting counterparty to commercialize derived models.",
+        "mitigation": "Mandate exclusive client ownership of all foreground IP and customer-specific enhancements; restrict license to internal use.",
+    },
+    {
+        "category": "Escrow & Operational Covenants",
+        "severity": "HIGH",
+        "score": 78.0,
+        "pattern": re.compile(
+            r"(earn-out|unfettered operational discretion|escrow release|technology escrow|working capital statement)",
+            re.IGNORECASE,
+        ),
+        "rationale": "Grants unfettered operational discretion during earn-out measurement periods, jeopardizing escrow milestone release conditions.",
+        "mitigation": "Subject operational changes to commercially reasonable standards and quarterly third-party audit.",
+    },
+    {
+        "category": "Limitation of Liability & Super-Caps",
+        "severity": "HIGH",
+        "score": 75.0,
+        "pattern": re.compile(
+            r"(limitation of liability|aggregate liability|consequential damages|super-cap)",
+            re.IGNORECASE,
+        ),
+        "rationale": "Asymmetrical liability framework creates one-sided exposure while excluding data breach and confidentiality from super-caps.",
+        "mitigation": "Establish mutual liability caps with standard carve-outs for gross negligence, willful misconduct, and confidentiality breaches.",
+    },
+    {
+        "category": "Service Level & Remedies",
+        "severity": "HIGH",
+        "score": 72.0,
+        "pattern": re.compile(
+            r"(monthly uptime|service level|service credit|exclusive financial remedy|rto|rpo)",
+            re.IGNORECASE,
+        ),
+        "rationale": "Service credits are designated as the sole and exclusive remedy, eliminating termination rights for persistent chronic outages.",
+        "mitigation": "Add chronic outage termination trigger (uptime below 95% for 2 consecutive billing cycles) with full prepaid refund.",
+    },
+    {
+        "category": "Restrictive Covenants & Non-Compete",
+        "severity": "MEDIUM",
+        "score": 65.0,
+        "pattern": re.compile(
+            r"(non-competition|five \(5\) consecutive years|directly or indirectly, anywhere in|non-solicitation)",
+            re.IGNORECASE,
+        ),
+        "rationale": "Unreasonable five-year global non-competition restraint creates severe anti-trust and enforceability concerns.",
+        "mitigation": "Narrow restrictive covenant to 12 months, restricted specifically to direct competitive product lines.",
+    },
+    {
+        "category": "Termination & Remedies",
+        "severity": "MEDIUM",
+        "score": 55.0,
+        "pattern": re.compile(
+            r"(termination|cure period|default|immediate termination)",
+            re.IGNORECASE,
+        ),
+        "rationale": "Unilateral immediate termination without customary 30-day notice and cure mechanisms.",
+        "mitigation": "Provide standard 30-day written notice and cure period for non-curable material breaches prior to termination.",
+    },
+    {
+        "category": "Governing Law & Dispute Venue",
+        "severity": "MEDIUM",
+        "score": 50.0,
+        "pattern": re.compile(
+            r"(substantive laws of switzerland|icc rules of arbitration|geneva, switzerland|courts of london|governing law)",
+            re.IGNORECASE,
+        ),
+        "rationale": "Offshore foreign jurisdiction introduces cross-border enforcement latency and prohibitive arbitration expense.",
+        "mitigation": "Designate neutral domestic venue (e.g. State of Delaware) under AAA expedited commercial rules.",
+    },
+]
+
+
+async def auditor_node(state: ContractReviewState) -> ContractReviewState:
     """
-    Agent A: Internal Auditor / Defender.
-    Identifies high-risk clauses, uncapped indemnifications, AI training traps, and playbook deviations.
+    Auditor Agent:
+    Scans contract sections against the 10 core risk categories,
+    computes risk scores, prompts LLM for opening Auditor Statement,
+    and logs execution latency and telemetry.
     """
+    start_time = time.time()
     sections = state.get("sections", [])
-    playbook_rules = state.get("playbook_rules", [])
     raw_text = state.get("raw_text", "")
-    use_local = state.get("use_local_llm", False)
-    
-    identified_risks: List[Dict[str, Any]] = []
-    debate_transcript = list(state.get("debate_transcript", []))
+    flagged_risks: List[Dict[str, Any]] = []
 
-    # Comprehensive risk targets across simple & complex legal agreements
-    risk_targets = [
-        {
-            "category": "AI Training & Data Privacy",
-            "regex": r"(ingest, de-identify|foundational ai models|prompts|model checkpoints|training, tuning|training data|sub-processor)",
-            "severity": "CRITICAL",
-            "base_score": 95.0,
-            "rationale": "Clause grants counterparty perpetual license to ingest customer prompts and model weights to train foundation models, violating confidentiality and regulatory privacy mandates.",
-            "mitigation": "Completely strike foundation model training rights and mandate strict controller data isolation."
-        },
-        {
-            "category": "Indemnification & Baskets",
-            "regex": r"(indemnif\w+|hold harmless|tipping basket|de minimis threshold|basket)",
-            "severity": "CRITICAL",
-            "base_score": 88.0,
-            "rationale": "Imposes first-dollar tipping basket or broad unilateral indemnification without reciprocal protections or reasonable liability caps.",
-            "mitigation": "Convert tipping basket to true deductible basket, lower de minimis threshold, and cap exposure."
-        },
-        {
-            "category": "Representations & Warranties",
-            "regex": r"(actual knowledge of the chief executive|without any duty of reasonable inquiry|does not warrant.*infringe|freedom to operate)",
-            "severity": "CRITICAL",
-            "base_score": 85.0,
-            "rationale": "Subjective actual knowledge qualification without inquiry and explicit disclaimers of patent non-infringement leave client vulnerable to immediate third-party litigation.",
-            "mitigation": "Replace with constructive knowledge after diligent inquiry and insert express third-party patent non-infringement warranty."
-        },
-        {
-            "category": "IP Ownership & Commercialization",
-            "regex": r"(jointly by developer and sponsor|without obtaining the consent of, or accounting|grant-back|irrevocably assigns|foreground ip)",
-            "severity": "HIGH",
-            "base_score": 82.0,
-            "rationale": "Joint IP ownership without duty of accounting allows counterparty to commercialize proprietary technology to direct competitors with zero profit sharing.",
-            "mitigation": "Divide ownership by core competencies (software vs compound) and mandate mutual consent and 50/50 profit accounting."
-        },
-        {
-            "category": "Escrow & Operational Covenants",
-            "regex": r"(earn-out|unfettered operational discretion|escrow release|technology escrow|working capital statement)",
-            "severity": "HIGH",
-            "base_score": 78.0,
-            "rationale": "Unilateral operational discretion threatens earn-out attainment; subjective technical support triggers jeopardize proprietary source code escrow.",
-            "mitigation": "Institute express good-faith covenants for earn-outs and restrict escrow releases strictly to judicial bankruptcy."
-        },
-        {
-            "category": "Limitation of Liability & Super-Caps",
-            "regex": r"(limitation of liability|aggregate liability|consequential damages|super-cap)",
-            "severity": "HIGH",
-            "base_score": 75.0,
-            "rationale": "Aggregate liability cap is insufficient to cover catastrophic data breach or IP damages; lacks appropriate super-caps.",
-            "mitigation": "Institute 5x annual value super-cap for data protection/security breaches and uncap gross negligence."
-        },
-        {
-            "category": "Service Level & Remedies",
-            "regex": r"(monthly uptime|service level|service credit|exclusive financial remedy|rto|rpo)",
-            "severity": "HIGH",
-            "base_score": 72.0,
-            "rationale": "Service credits are designated as exclusive remedy, locking client out of direct damage recovery for catastrophic multi-hour compute outages.",
-            "mitigation": "Carve out chronic or severe downtime (<99.50%) from sole remedy clause to preserve common law termination and damages."
-        },
-        {
-            "category": "Restrictive Covenants & Non-Compete",
-            "regex": r"(non-competition|five \(5\) consecutive years|directly or indirectly, anywhere in|non-solicitation)",
-            "severity": "MEDIUM",
-            "base_score": 65.0,
-            "rationale": "Overbroad 5-year global geographic and technological non-compete risks antitrust unenforceability and undue restraint of trade.",
-            "mitigation": "Narrow duration to 24 months, specify core market jurisdictions, and allow passive investments."
-        },
-        {
-            "category": "Termination & Remedies",
-            "regex": r"(termination|cure period|default|immediate termination)",
-            "severity": "MEDIUM",
-            "base_score": 55.0,
-            "rationale": "Provides inadequate cure window or permits sudden unilateral contract cancellation.",
-            "mitigation": "Institute standard 30-day notice and cure period prior to termination for cause."
-        },
-        {
-            "category": "Governing Law & Dispute Venue",
-            "regex": r"(substantive laws of switzerland|icc rules of arbitration|geneva, switzerland|courts of london|governing law)",
-            "severity": "MEDIUM",
-            "base_score": 50.0,
-            "rationale": "Distant foreign arbitral seat (e.g. ICC Geneva under Swiss law) exponentially increases dispute resolution expenses.",
-            "mitigation": "Align governing law to Delaware or New York with domestic AAA or JAMS arbitration."
-        }
-    ]
+    # Map sections by content search
+    for cat_spec in RISK_CATEGORIES:
+        category = cat_spec["category"]
+        pattern = cat_spec["pattern"]
+        matched_clause_ref = None
+        matched_clause_text = None
 
-    seen_categories = set()
+        # Search sections first
+        for sec in sections:
+            content = sec.get("content", "")
+            title = sec.get("title", "")
+            sec_num = sec.get("section_number", "")
+            full_sec_text = f"{title}\n{content}"
 
-    for sec in sections:
-        sec_num = sec.get("section_number", "General")
-        sec_title = sec.get("title", "")
-        sec_content = sec.get("content", "")
-        combined = f"{sec_title} {sec_content}"
+            m = pattern.search(full_sec_text)
+            if m:
+                matched_clause_ref = f"Section {sec_num} ({title})"
+                # Extract surrounding window
+                start = max(0, m.start() - 60)
+                end = min(len(full_sec_text), m.end() + 250)
+                matched_clause_text = full_sec_text[start:end].strip()
+                break
 
-        for target in risk_targets:
-            cat_key = f"{sec_num}_{target['category']}"
-            if cat_key not in seen_categories and re.search(target["regex"], combined, re.IGNORECASE):
-                seen_categories.add(cat_key)
-                risk_id = f"risk_{uuid.uuid4().hex[:6]}"
-                identified_risks.append({
-                    "id": risk_id,
-                    "clause_reference": f"Section {sec_num} ({sec_title})",
-                    "category": target["category"],
-                    "severity": target["severity"],
-                    "score": target["base_score"],
-                    "rationale": target["rationale"],
-                    "suggested_mitigation": target["mitigation"],
-                    "target_section": str(sec_num),
-                    "original_content": sec_content[:800]
-                })
+        # Fallback search across raw text if not found in section blocks
+        if not matched_clause_ref:
+            m = pattern.search(raw_text)
+            if m:
+                matched_clause_ref = "Contract Provisions"
+                start = max(0, m.start() - 60)
+                end = min(len(raw_text), m.end() + 250)
+                matched_clause_text = raw_text[start:end].strip()
 
-    # Fallback if no sections matched
-    if not identified_risks:
-        for target in risk_targets[:4]:
-            if re.search(target["regex"], raw_text, re.IGNORECASE):
-                identified_risks.append({
-                    "id": f"risk_{uuid.uuid4().hex[:6]}",
-                    "clause_reference": f"Clause: {target['category']}",
-                    "category": target["category"],
-                    "severity": target["severity"],
-                    "score": target["base_score"],
-                    "rationale": target["rationale"],
-                    "suggested_mitigation": target["mitigation"],
-                    "target_section": "1.0",
-                    "original_content": raw_text[:500]
-                })
+        if matched_clause_ref and matched_clause_text:
+            flagged_risks.append({
+                "id": f"risk_{len(flagged_risks) + 1}",
+                "category": category,
+                "severity": cat_spec["severity"],
+                "score": cat_spec["score"],
+                "clause_reference": matched_clause_ref,
+                "original_text": matched_clause_text,
+                "legal_rationale": cat_spec["rationale"],
+                "mitigation_strategy": cat_spec["mitigation"],
+            })
 
-    # Generate Auditor Debate Contribution
-    top_risk_categories = ", ".join(list(set(r["category"] for r in identified_risks))[:3])
-    auditor_statement = (
-        f"Auditor Analysis Complete: Flagged {len(identified_risks)} compliance discrepancies and risk traps. "
-        f"Critical exposure identified in: {top_risk_categories or 'General Standard Terms'}. "
-        f"Recommending immediate defensive redlines to protect company exposure."
+    # Sort risks by score descending
+    flagged_risks.sort(key=lambda r: r["score"], reverse=True)
+
+    # Compute risk summary counts
+    risk_summary = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+    for r in flagged_risks:
+        sev = r["severity"].lower()
+        if sev in risk_summary:
+            risk_summary[sev] += 1
+
+    # Prompt LLM for Auditor opening statement
+    top_categories = ", ".join([r["category"] for r in flagged_risks[:3]]) or "general contractual provisions"
+    prompt = (
+        f"You are the Enterprise Auditor Agent. You have analyzed '{state.get('contract_title')}'. "
+        f"You flagged {len(flagged_risks)} high-exposure clauses, primarily in {top_categories}. "
+        f"Deliver a sharp opening audit findings statement explaining why these provisions violate enterprise policy."
+    )
+    system_prompt = (
+        "You are an elite Enterprise Auditor and Compliance Counsel. Deliver an authoritative, concise legal audit statement."
     )
 
-    try:
-        llm_auditor, model_used, _ = await llm_client.call_llm(
-            prompt=(
-                f"You are the Lead Contract Risk Auditor. You just reviewed a contract and flagged {len(identified_risks)} risks. "
-                f"Key problematic categories: {top_risk_categories}. Provide a sharp 2-sentence opening statement summarizing "
-                f"the legal risks and commanding immediate contractual modifications."
-            ),
-            system_prompt="You are a strict internal corporate auditor defending the enterprise.",
-            provider=state.get("llm_provider"),
-            model_name=state.get("model_name"),
-            use_local=state.get("use_local_llm", False),
-            temperature=0.2
+    llm_resp, llm_latency, model_used = await llm_client.call_llm(
+        prompt=prompt,
+        system_prompt=system_prompt,
+        provider=state.get("llm_provider"),
+        model_name=state.get("model_name"),
+        use_local=state.get("use_local_llm", False),
+        api_key_override=state.get("api_key_override"),
+    )
+
+    total_latency_ms = (time.time() - start_time) * 1000.0
+
+    # Log telemetry
+    async with AsyncSessionLocal() as db:
+        await token_tracker.log_execution(
+            db=db,
+            contract_id=state.get("contract_id"),
+            agent_name="Auditor Agent",
+            action="risk_scan_and_opening_statement",
+            prompt_text=prompt,
+            completion_text=llm_resp,
+            latency_ms=total_latency_ms,
+            model_name=model_used,
+            details=f"Flagged {len(flagged_risks)} risks",
         )
-        if llm_auditor and len(llm_auditor.strip()) > 20:
-            auditor_statement = f"[{model_used}] {llm_auditor.strip()}"
-    except Exception:
-        pass
 
-    debate_transcript.append({
+    transcript_entry = {
         "agent_name": "Auditor Agent",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "content": auditor_statement,
-        "target_clause": "Contract Global Review"
-    })
-
-    return {
-        "identified_risks": identified_risks,
-        "debate_transcript": debate_transcript,
-        "current_status": "Auditor review complete"
+        "timestamp": datetime.now(timezone.utc).strftime("%H:%M:%S UTC"),
+        "content": llm_resp,
+        "target_clause": "Executive Audit Overview",
     }
+
+    transcript = list(state.get("debate_transcript", []))
+    transcript.append(transcript_entry)
+
+    state["identified_risks"] = flagged_risks
+    state["risk_summary"] = risk_summary
+    state["debate_transcript"] = transcript
+    state["current_status"] = "audited"
+    return state

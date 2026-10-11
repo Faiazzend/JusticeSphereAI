@@ -1,38 +1,36 @@
 import re
-from typing import Tuple, Dict
+from typing import Dict, Tuple
 
 
 class PIIRedactor:
-    """Detects and redacts sensitive personally identifiable information (PII)."""
+    def __init__(self):
+        # Order matters: SSN, Credit Card, Bank Account, Tax ID before generic phone patterns
+        self.patterns = {
+            "SSN": re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
+            "CREDIT_CARD": re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b"),
+            "EMAIL": re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
+            "TAX_ID": re.compile(r"\b\d{2}-\d{7}\b"),
+            "BANK_ACCOUNT": re.compile(r"\b\d{8,17}\b"),
+            "PHONE": re.compile(
+                r"(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]+(\d{3})[-. ]*(\d{4})\b"
+            ),
+        }
 
-    PATTERNS = {
-        "SSN": r"\b\d{3}-\d{2}-\d{4}\b",
-        "CREDIT_CARD": r"\b(?:\d{4}[-\s]?){3}\d{4}\b",
-        "EMAIL": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
-        "PHONE": r"\b(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})\b",
-        "BANK_ACCOUNT": r"\b\d{8,17}\b",
-        "TAX_ID": r"\b\d{2}-\d{7}\b"
-    }
-
-    @classmethod
-    def redact(cls, text: str) -> Tuple[str, Dict[str, int]]:
-        """
-        Redact sensitive information from text.
-        Returns the sanitized text and a breakdown of redactions made.
-        """
+    def redact(self, text: str) -> Tuple[str, Dict[str, int]]:
         if not text:
-            return "", {}
+            return "", {k: 0 for k in self.patterns.keys()}
 
-        sanitized = text
-        stats = {}
+        redacted_text = text
+        stats: Dict[str, int] = {}
 
-        for pii_type, pattern in cls.PATTERNS.items():
-            matches = re.findall(pattern, sanitized)
+        for pii_type, pattern in self.patterns.items():
+            matches = list(pattern.finditer(redacted_text))
+            stats[pii_type] = len(matches)
             if matches:
-                stats[pii_type] = len(matches)
-                sanitized = re.sub(pattern, f"[REDACTED_{pii_type}]", sanitized)
+                redacted_text = pattern.sub(f"[REDACTED_{pii_type}]", redacted_text)
 
-        return sanitized, stats
+        return redacted_text, stats
 
 
+# Global instance
 pii_redactor = PIIRedactor()

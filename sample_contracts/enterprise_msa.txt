@@ -1,0 +1,8 @@
+SECTION 1. SERVICES AND FEES
+1.1 Invoicing. Customer shall remit fee payment under Net 30 terms upon receipt of undisputed invoices. Late payments accrue interest at 1.5% per month.
+
+SECTION 2. INDEMNITY AND SUPER-CAPS
+2.1 Uncapped Indemnity. Vendor shall indemnify, defend, and hold harmless Customer from any claims arising out of the performance of Services, without any limitation of liability or aggregate super-cap.
+
+SECTION 3. COMPLIANCE AUDIT
+3.1 SOC 2 Inspection. Vendor shall provide annual SOC 2 Type II audit reports and permit on-site inspections upon five (5) business days written notice. Provider shall maintain commercial general liability and cyber insurance of $5M.

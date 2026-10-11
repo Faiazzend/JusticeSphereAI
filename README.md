@@ -1,169 +1,123 @@
-# ⚖️ ContractMind v1.5 — Autonomous Multi-Agent Legal AI Studio
+# 🏛️ ContractMind v1.5.3 — Autonomous Multi-Agent Legal AI Studio
 
-> **AI Builders Congress 2026 — Track: JusticeSphere_AI**  
-> *AI-Native Contract Intelligence, Multi-Agent Redlining Debate, & Obligation Extraction Engine*
-
----
-
-## 🌟 Overview
-
-**ContractMind v1.5** is an enterprise-grade autonomous legal AI studio designed to automate contract review, commercial negotiation, and compliance audits. Powered by a **Cyclic Multi-Agent StateGraph**, it orchestrates an adversarial legal debate between specialized AI personas to produce consensus redlines, structured obligation matrices, and native Microsoft Word Track Changes documents in under 2 seconds.
+> **Version:** 1.5.3  
+> **Track:** JusticeSphere_AI — AI Builders Congress 2026  
+> **Repository:** [https://github.com/Faiazzend/JusticeSphereAI](https://github.com/Faiazzend/JusticeSphereAI)
 
 ---
 
-## 🏛️ Core Architecture: Cyclic Multi-Agent Debate
+## 📖 Executive Summary
 
-```
-   ┌────────────────────────────────────────────────────────┐
-   │                   Raw Agreement PDF                    │
-   └───────────────────────────┬────────────────────────────┘
-                               │
-                  [PyMuPDF + PII Redaction]
-                               ▼
-            [Contextual RAG Semantic Chunking Engine]
-                               │
-    ┌──────────────────────────┴──────────────────────────┐
-    │                                                     │
-    ▼                                                     ▼
-┌────────────────────────┐              ┌────────────────────────┐
-│    Auditor Agent       │  ◄────────►  │ Opposing Counsel Agent │
-│ (Internal Enterprise)  │              │ (Counterparty Advocate)│
-└───────────┬────────────┘              └───────────┬────────────┘
-            │                                       │
-            └───────────────────┬───────────────────┘
-                                ▼
-                 ┌─────────────────────────────┐
-                 │  Redline Synthesizer Agent  │
-                 │   (Consensus & Compromise)  │
-                 └──────────────┬──────────────┘
-                                │
-                                ▼
-                 ┌─────────────────────────────┐
-                 │  Obligation Extractor Agent │
-                 │ (Milestones, Dates & Fines) │
-                 └──────────────┬──────────────┘
-                                │
-                                ▼
-       ┌────────────────────────────────────────────────┐
-       │ - Real-Time Diff Viewer (Insert/Delete/Equal)  │
-       │ - Word Track Changes (.docx) OpenXML Export    │
-       │ - Structured Obligations Table Matrix          │
-       │ - Model Context Protocol (MCP) Tools Gateway   │
-       └────────────────────────────────────────────────┘
-```
-
-1. **Auditor Agent (Enterprise Defender):** Analyzes contract clauses against chosen negotiation playbooks, identifying uncapped indemnification, AI training traps, and liability exposure.
-2. **Opposing Counsel Agent (Counterparty Advocate):** Pushes back on overly restrictive terms, offering commercially viable compromises to preserve deal velocity.
-3. **Redline Synthesizer Agent (Consensus Arbiter):** Reconciles the debate, formulating balanced redline replacements with word-level diff tokens and legal rationales.
-4. **Obligation Extractor Agent:** Extracts operational duties, obligor/recipient roles, calendar triggers, and breach penalties into structured tabular data.
+**ContractMind v1.5.3** is an enterprise-grade autonomous legal intelligence platform that ingests complex commercial agreements, conducts adversarial multi-agent debate, synthesizes consensus redlines into genuine Word (`.docx`) Track Changes format, and extracts structured compliance obligation matrices with instant calendar integration.
 
 ---
 
-## 🚀 Key Features
+## 🚀 Key Architectural Innovations
 
-* **Dual Inference Engine:** 
-  * Cloud: **Google Gemini 3.5 Flash Lite** (sub-2s latency, ~$0.000075/1K tokens).
-  * Local Privacy Core: **Local Ollama** (`qwen3.5:4b`), running completely offline with automatic cloud failover.
-* **OpenXML Native Track Changes:** Generates authentic `.docx` files with native `<w:ins>` and `<w:del>` markup compatible with Microsoft Word's "Accept/Reject All Changes" review ribbon.
-* **PII Redaction Pipeline:** Automatic regex sanitization of SSNs, credit cards, bank accounts, and tax IDs prior to embedding or LLM transmission.
-* **Interactive Guided Webpage Rundown:** Step-by-step auto-advancing tour with high-intensity glowing spotlight halo (`#5B67F6`) and backdrop dimming.
-* **Pre-Loaded Benchmark Evaluation Datasets:** 6 instant corporate deal benchmarks (Tech M&A, Cloud AI DPA, Joint IP R&D, Enterprise MSA, SaaS Agreement, Mutual NDA).
-* **MCP FastServer Gateway:** Exposes standard Model Context Protocol endpoints at `/mcp/tools` and `/mcp/call`.
-* **Execution Telemetry & Cost Audit:** Live token consumption, measured execution latency, and cost audit trail with reset functionality.
+### 1. Multi-Agent StateGraph Pipeline (4 Specialized Roles)
+1. **Auditor Agent:** Enterprise compliance defender scanning across 10 critical risk categories (AI model training, first-dollar tipping indemnity baskets, warranty qualifiers, IP grant-backs, etc.).
+2. **Opposing Counsel Agent:** Counterparty negotiator aggressively challenging unilateral compliance claims with commercial counterarguments and compromises.
+3. **Redline Synthesizer Agent:** Impartial consensus arbiter synthesizing balanced compromise language and computing composite risk scores.
+4. **Obligation Extractor Agent:** Compliance monitor extracting structured role matrices (obligor, recipient, triggers, recurrence, breach penalties).
+
+### 2. Lawyer-in-the-Loop Decisions & AI Prompt Rewriter
+- **Accept / Reject / Reset Action Toolbar:** Lawyers can individually accept or reject proposed clauses, which dynamically alters downstream Word (`.docx`) OpenXML export logic.
+- **AI Prompt Rewriter Panel:** In-line rewriting allows legal teams to type natural language instructions or select quick-chips (`+ Make Mutual`, `+ 1x Annual Cap`, `+ 30-Day Cure`, `+ Strike AI Training`) to instantly re-synthesize redlines.
+- **Decision-Branching DOCX Output:** Accepted clauses inject native `<w:ins>` and `<w:del>` OpenXML Track Changes markup; rejected clauses cleanly preserve original contract language.
+
+### 3. Multi-Format Export Suite
+- **Native Word Track Changes (`.docx`):** Produces genuine `<w:ins>` and `<w:del>` markup recognized by Microsoft Word's review ribbon.
+- **iCalendar Compliance Calendar (`.ics`):** Exports all extracted covenants and operational deadlines formatted to RFC 5545 for 1-click import into Google Calendar, Microsoft Outlook, or Apple Calendar.
+- **Structured JSON Analysis (`.json`):** Full machine-readable audit report for CLM integration (Ironclad, Agiloft, etc.).
+- **Redlines & Obligations CSV (`.csv`):** Tabular CSV export of recommendations and obligation matrices.
+
+### 4. Side-by-Side Contract Version Comparison & Risk Delta
+- Instant visual diff comparison between two agreements (e.g. Master Agreement vs Counterparty Draft).
+- Displays word-level diff tokens, added/removed/modified sections, and computed risk score variance delta.
+
+### 5. Real-Time Live Streaming (SSE with Queue Pub/Sub)
+- Low-latency Server-Sent Events (`/api/v1/stream/{id}`) with queue subscription, debate transcript replay, and automatic heartbeat keep-alive.
+
+### 6. Contextual RAG & PII Sanitization
+- Regex-based PII redaction strips SSNs, credit cards, bank accounts, and tax IDs before ingestion.
+- PyMuPDF (`fitz`) parses text and converts complex embedded document tables into clean Markdown exhibits.
+- Contextual semantic chunking with ChromaDB vector search and an automatic fallback to in-memory term-frequency cosine scoring.
+
+### 7. Dual Inference Engine with LLM Provider Health Diagnostics
+- Supports **Google Gemini 2.0 Flash**, Local **Ollama** (`qwen3.5:4b`), OpenAI GPT-4o, and Anthropic Claude.
+- Real-time diagnostic health check endpoint (`/api/v1/analysis/llm/health`) reporting latency and connectivity.
+- High-caliber deterministic legal fallback core ensures 100% SLA even during network outages.
+
+### 8. Model Context Protocol (MCP) Gateway
+- Exposes standardized JSON-RPC tools (`evaluate_clause`, `get_playbook_rules`, `calculate_risk_matrix`) at `/mcp/tools` and `/mcp/call`.
+
+### 9. Alpine.js Neo-Legal Studio with 7-Step Guided Tour
+- Zero React build required for standalone studio. Features a 7-step interactive tour with high-intensity glowing halo spotlights (`box-shadow: 0 0 0 11px rgba(91, 103, 246, 0.8)`).
 
 ---
 
-## ⚡ Quick Start
+## 🛠️ Quickstart
 
-### 1. Requirements
-* **Python 3.10+** (tested on Python 3.12, 3.14)
-* **Git**
-* (Optional) **Ollama** running locally on port `11434` with `qwen3.5:4b`
-
-### 2. Setup & Installation
-```bash
-# Clone the repository
-git clone https://github.com/Faiazzend/JusticeSphereAI.git
-cd JusticeSphereAI
-
-# Copy environment configuration
-cp backend/.env.example backend/.env
-```
-Edit `backend/.env` to insert your `GEMINI_API_KEY` (or configure via the UI Settings modal).
-
-### 3. Launching ContractMind
-#### Windows (1-Click Launcher):
-Simply double-click:
-```bat
+### Option A: 1-Click Launch (Windows)
+Double-click:
+```cmd
 run_contractmind.bat
 ```
 
-#### Terminal / Cross-Platform:
+### Option B: Python CLI Launch
 ```bash
+# 1. Install dependencies
+pip install -r backend/requirements.txt
+
+# 2. Launch orchestrator
 python launch.py
 ```
-This automatically initializes the database, verifies dependencies, starts the FastAPI backend, and opens the Alpine.js Studio in your default browser at:
-👉 **`http://localhost:8000`**
+Server starts on `http://localhost:8000` and automatically opens your default browser.
 
 ---
 
-## ☁️ Deploying on Vercel (Multi-Service Architecture)
+## 🌐 API Endpoints
 
-ContractMind is configured for instant single-project deployment on Vercel using [Vercel Services](https://vercel.com/docs/services):
-
-* **`frontend` (Next.js):** Public front-end served at `/(.*)` with full dashboard, obligation viewer, and risk breakdown.
-* **`backend` (FastAPI):** Python serverless engine providing API routes (`/api/(.*)`), Swagger docs (`/docs`), MCP endpoints (`/mcp/(.*)`), and the **Standalone Interactive Studio** at [`/studio`](#).
-* **Service Binding:** Next.js server functions communicate with FastAPI internally through `process.env.BACKEND_URL`.
-
-### One-Click Vercel Setup:
-1. Import the repository [`Faiazzend/JusticeSphereAI`](https://github.com/Faiazzend/JusticeSphereAI) into your Vercel Dashboard.
-2. Leave the Root Directory as default (`.`) — Vercel detects `vercel.json` automatically.
-3. Configure the following Environment Variables in the project settings:
-   * `GEMINI_API_KEY`: Your Google Gemini API Key.
-   * `SECRET_KEY`: A secure random string for JWT secret.
-4. Deploy! Both services will build and link automatically.
+- `GET /` & `GET /studio`: Serves the Alpine.js Neo-Legal Studio.
+- `POST /api/v1/contracts/upload`: PDF/TXT ingestion with PyMuPDF table parsing and PII redaction.
+- `POST /api/v1/contracts/demo/{sample_type}`: 1-Click auto-analysis of benchmark contracts (`ma`, `cloud_dpa`, `joint_ip`, `msa`, `saas`, `nda`).
+- `GET /api/v1/contracts/`: List all analyzed agreements (with `skip` & `limit` pagination).
+- `GET /api/v1/contracts/{id}`: Detailed contract report.
+- `DELETE /api/v1/contracts/{id}`: Purge contract, delete disk file, and clear ChromaDB collection.
+- `POST /api/v1/contracts/compare`: Side-by-side contract comparison and risk delta.
+- `POST /api/v1/analysis/{id}/trigger`: Trigger 4-agent stategraph analysis.
+- `GET /api/v1/analysis/{id}/redlines`: Filter redlines by `risk_severity` and `decision` status.
+- `PATCH /api/v1/analysis/{id}/redlines/{redline_id}`: Update lawyer decision (`accepted: true/false/null`).
+- `POST /api/v1/analysis/{id}/redlines/{redline_id}/regenerate`: Lawyer AI prompt rewriter.
+- `GET /api/v1/analysis/{id}/export/docx`: Native Word Track Changes document.
+- `GET /api/v1/analysis/{id}/export/ics`: RFC 5545 iCalendar compliance schedule.
+- `GET /api/v1/analysis/{id}/export/json`: Complete analysis export in structured JSON.
+- `GET /api/v1/analysis/{id}/export/csv`: Tabular CSV of redlines and obligations.
+- `GET /api/v1/analysis/stream/{id}`: Real-time SSE debate stream.
+- `GET /api/v1/analysis/llm/health`: Provider latency and diagnostic status.
+- `GET /api/v1/analysis/audit/summary`: Real-time token and USD cost telemetry.
+- `GET /api/v1/playbook/`: List institutional negotiation playbooks.
+- `POST /api/v1/playbook/custom`: Create custom negotiation playbook.
+- `GET /mcp/tools` & `POST /mcp/call`: Model Context Protocol tools gateway.
+- `GET /health`: System health status (`{"status": "healthy", "version": "1.5.3"}`).
 
 ---
 
-## 🧪 Testing
+## 🧪 Automated Test Suite
 
-Run the automated test suite using pytest:
+Run the full pytest suite (15 unit and integration tests):
 ```bash
-cd backend
-python -m pytest -v tests
-```
-
-To run a live Gemini pipeline simulation:
-```bash
-cd backend
-python test_gemini_nodes.py
+python -m pytest backend/tests -v
 ```
 
 ---
 
-## 📁 Repository Structure
-
-```
-JusticeSphere_AI/
-├── backend/
-│   ├── app/
-│   │   ├── agents/          # LangGraph Multi-Agent StateGraph nodes & LLM gateway
-│   │   ├── api/v1/          # FastAPI REST endpoints (analysis, contracts, telemetry)
-│   │   ├── core/            # PII redactor, security, token tracker
-│   │   ├── mcp_server/      # FastContract Model Context Protocol server
-│   │   ├── models/          # SQLAlchemy async models (Contract, AuditLog, User)
-│   │   ├── schemas/         # Pydantic v2 schemas
-│   │   └── services/        # PDF extraction, Diff engine, RAG ChromaDB, DOCX export
-│   ├── static/              # Alpine.js reactive UI frontend (index.html)
-│   └── tests/               # Pytest async test suite
-├── benchmarks/              # Comprehensive benchmark evaluation reports & ground truth
-├── sample_contracts/        # 6 pre-loaded benchmark contract PDFs & text files
-├── launch.py                # Process orchestrator & redirect server
-├── run_contractmind.bat     # 1-click Windows execution batch file
-└── README.md
-```
+## 🚢 Production Deployment (Vercel Multi-Service)
+Configured via `vercel.json` with multi-service bindings:
+- Backend: FastAPI service routed to `/api/*`, `/health`, `/mcp/*`
+- Frontend: Next.js bridge route handler serving the studio with server-side rewrites.
 
 ---
 
-## ⚖️ License
-Developed for **AI Builders Congress 2026**. Distributed under the MIT License.
+## 📜 License
+Licensed under Apache 2.0. Built for the **AI Builders Congress 2026** (Track: *JusticeSphere_AI*).

@@ -1,145 +1,295 @@
-import os
-from typing import List, Dict, Any
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import List, Dict, Any, Optional
+
 from docx import Document
-from docx.shared import Inches, Pt, RGBColor
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.shared import Inches, Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_TABLE_ALIGNMENT
+
 from app.config import settings
 
 
 class ExportService:
-    """Exports redlined contracts into DOCX format with native Word Track Changes revision XML."""
+    def __init__(self):
+        pass
 
-    @staticmethod
-    def _add_revision_token(paragraph, text: str, token_type: str, change_id: int):
-        """Injects genuine OpenXML w:ins and w:del Track Changes revisions into Word paragraph."""
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        author = "ContractMind Legal AI"
+    def _add_track_change_deletion(
+        self, paragraph, text: str, change_id: int, utc_iso: str
+    ):
+        del_elem = OxmlElement("w:del")
+        del_elem.set(qn("w:id"), str(change_id))
+        del_elem.set(qn("w:author"), "ContractMind Legal AI")
+        del_elem.set(qn("w:date"), utc_iso)
 
-        if token_type == "delete":
-            del_elem = OxmlElement('w:del')
-            del_elem.set(qn('w:id'), str(change_id))
-            del_elem.set(qn('w:author'), author)
-            del_elem.set(qn('w:date'), timestamp)
+        r = OxmlElement("w:r")
+        rPr = OxmlElement("w:rPr")
 
-            r_elem = OxmlElement('w:r')
-            rPr = OxmlElement('w:rPr')
-            strike = OxmlElement('w:strike')
-            color = OxmlElement('w:color')
-            color.set(qn('w:val'), 'DC2626')
-            rPr.append(strike)
-            rPr.append(color)
-            r_elem.append(rPr)
+        strike = OxmlElement("w:strike")
+        color = OxmlElement("w:color")
+        color.set(qn("w:val"), "DC2626")
 
-            del_text = OxmlElement('w:delText')
-            del_text.text = text + " "
-            r_elem.append(del_text)
-            del_elem.append(r_elem)
-            paragraph._p.append(del_elem)
+        rPr.append(strike)
+        rPr.append(color)
+        r.append(rPr)
 
-        elif token_type == "insert":
-            ins_elem = OxmlElement('w:ins')
-            ins_elem.set(qn('w:id'), str(change_id))
-            ins_elem.set(qn('w:author'), author)
-            ins_elem.set(qn('w:date'), timestamp)
+        del_text = OxmlElement("w:delText")
+        del_text.text = text
+        del_text.set(qn("xml:space"), "preserve")
+        r.append(del_text)
 
-            r_elem = OxmlElement('w:r')
-            rPr = OxmlElement('w:rPr')
-            u = OxmlElement('w:u')
-            u.set(qn('w:val'), 'single')
-            color = OxmlElement('w:color')
-            color.set(qn('w:val'), '16A34A')
-            rPr.append(u)
-            rPr.append(color)
-            r_elem.append(rPr)
+        del_elem.append(r)
+        paragraph._p.append(del_elem)
 
-            t_elem = OxmlElement('w:t')
-            t_elem.text = text + " "
-            r_elem.append(t_elem)
-            ins_elem.append(r_elem)
-            paragraph._p.append(ins_elem)
+    def _add_track_change_insertion(
+        self, paragraph, text: str, change_id: int, utc_iso: str
+    ):
+        ins_elem = OxmlElement("w:ins")
+        ins_elem.set(qn("w:id"), str(change_id))
+        ins_elem.set(qn("w:author"), "ContractMind Legal AI")
+        ins_elem.set(qn("w:date"), utc_iso)
 
-        else:
-            run = paragraph.add_run(text + " ")
-            run.font.color.rgb = RGBColor(30, 41, 59)
+        r = OxmlElement("w:r")
+        rPr = OxmlElement("w:rPr")
 
-    @staticmethod
-    def export_to_docx(
+        u = OxmlElement("w:u")
+        u.set(qn("w:val"), "single")
+        color = OxmlElement("w:color")
+        color.set(qn("w:val"), "16A34A")
+
+        rPr.append(u)
+        rPr.append(color)
+        r.append(rPr)
+
+        t = OxmlElement("w:t")
+        t.text = text
+        t.set(qn("xml:space"), "preserve")
+        r.append(t)
+
+        ins_elem.append(r)
+        paragraph._p.append(ins_elem)
+
+    def generate_docx_redline(
+        self,
         contract_title: str,
+        contract_id: str,
+        overall_risk_score: float,
+        risk_summary: Dict[str, int],
         redlines: List[Dict[str, Any]],
-        output_filename: str
+        obligations: Optional[List[Dict[str, Any]]] = None,
     ) -> str:
         """
-        Creates a Word (.docx) document displaying original clauses and native Track Changes revisions.
+        Creates a native Word document containing authentic OpenXML Track Changes
+        insertions and deletions with decision branching (Accepted, Rejected, Pending Review),
+        an executive summary table, and legal analysis.
         """
         doc = Document()
+        utc_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        change_counter = 1
 
         # Title
-        title_heading = doc.add_heading(f"Contract Redline Review: {contract_title}", level=0)
-        p_sub = doc.add_paragraph("Generated autonomously by ContractMind Legal AI Engine (Track Changes XML Enabled)\n")
-        p_sub.runs[0].font.italic = True
-        p_sub.runs[0].font.color.rgb = RGBColor(128, 128, 128)
+        title_p = doc.add_paragraph()
+        title_run = title_p.add_run("ContractMind v1.5 — Legal Audit & Redline Synthesis")
+        title_run.font.name = "Arial"
+        title_run.font.size = Pt(18)
+        title_run.font.bold = True
+        title_run.font.color.rgb = RGBColor(30, 41, 59)
 
-        # Overview Table
-        table = doc.add_table(rows=1, cols=4)
-        table.style = 'Table Grid'
-        hdr_cells = table.rows[0].cells
-        hdr_cells[0].text = "Section"
-        hdr_cells[1].text = "Severity"
-        hdr_cells[2].text = "Redline Type"
-        hdr_cells[3].text = "Status"
+        subtitle_p = doc.add_paragraph()
+        sub_run = subtitle_p.add_run(
+            f"Document: {contract_title} | ID: {contract_id} | Generated: {utc_iso}"
+        )
+        sub_run.font.size = Pt(10)
+        sub_run.font.color.rgb = RGBColor(100, 116, 139)
 
-        for rl in redlines:
-            row_cells = table.add_row().cells
-            row_cells[0].text = str(rl.get("section_number", "N/A"))
-            row_cells[1].text = str(rl.get("risk_severity", "MEDIUM"))
-            row_cells[2].text = str(rl.get("diff_type", "REPLACE"))
-            accepted = rl.get("accepted")
-            status_text = "Accepted" if accepted is True else ("Rejected" if accepted is False else "Pending Review")
-            row_cells[3].text = status_text
+        doc.add_paragraph()
 
-        doc.add_paragraph("\n")
+        # Section 1: Executive Risk Summary
+        h1 = doc.add_heading("1. Executive Risk & Scorecard Summary", level=1)
+        h1.paragraph_format.space_before = Pt(12)
 
-        # Detailed Clauses with Native Word Revisions
-        change_id_counter = 100
-        for rl in redlines:
-            sec_num = rl.get("section_number", "Clause")
-            severity = rl.get("risk_severity", "MEDIUM")
-            rationale = rl.get("legal_rationale", "")
-            tokens = rl.get("diff_tokens", [])
-            accepted = rl.get("accepted")
-            status_text = "Accepted" if accepted is True else ("Rejected" if accepted is False else "Pending Review")
+        table = doc.add_table(rows=5, cols=2)
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        table.style = "Table Grid"
 
-            h = doc.add_heading(f"Section {sec_num} [Severity: {severity} | Decision: {status_text}]", level=2)
+        metrics = [
+            ("Composite Risk Score", f"{overall_risk_score} / 100"),
+            ("Critical Risk Count", str(risk_summary.get("critical", 0))),
+            ("High Risk Count", str(risk_summary.get("high", 0))),
+            ("Medium Risk Count", str(risk_summary.get("medium", 0))),
+            ("Low Risk Count", str(risk_summary.get("low", 0))),
+        ]
 
-            # Redline text paragraph
-            p = doc.add_paragraph()
-            if accepted is False:
-                p.add_run("Decision: REJECTED (Original Clause Retained):\n").bold = True
-                p.add_run(rl.get("original_text", ""))
-            else:
-                p.add_run(f"Decision: {status_text.upper()} (Track Changes XML Enabled):\n").bold = True
-                if tokens:
-                    for token in tokens:
-                        text_str = token.get("text", "")
-                        t_type = token.get("type", "equal")
-                        change_id_counter += 1
-                        ExportService._add_revision_token(p, text_str, t_type, change_id_counter)
+        for i, (label, val) in enumerate(metrics):
+            row = table.rows[i]
+            row.cells[0].paragraphs[0].add_run(label).bold = True
+            row.cells[1].paragraphs[0].add_run(val)
+
+        doc.add_paragraph()
+
+        # Section 2: Redline Decisions Overview Table
+        h2 = doc.add_heading("2. Redline Decisions Overview", level=1)
+        h2.paragraph_format.space_before = Pt(14)
+
+        if redlines:
+            ov_table = doc.add_table(rows=1 + len(redlines), cols=4)
+            ov_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+            ov_table.style = "Table Grid"
+
+            headers = ["Section", "Severity", "Redline Type", "Decision Status"]
+            for col_idx, header in enumerate(headers):
+                cell = ov_table.rows[0].cells[col_idx]
+                r = cell.paragraphs[0].add_run(header)
+                r.bold = True
+
+            for row_idx, item in enumerate(redlines):
+                sec_num = item.get("section_number") or item.get("clause_id") or f"Section {row_idx+1}"
+                sev = item.get("risk_severity") or "HIGH"
+                rtype = item.get("diff_type") or item.get("category") or "Modification"
+                accepted = item.get("accepted")
+
+                if accepted is True:
+                    status_text = "Accepted"
+                elif accepted is False:
+                    status_text = "Rejected"
                 else:
-                    p.add_run(rl.get("suggested_text", ""))
+                    status_text = "Pending Review"
 
-            # Legal rationale block
-            p_rat = doc.add_paragraph()
-            r_run = p_rat.add_run(f"Legal Rationale: {rationale}")
-            r_run.font.italic = True
-            r_run.font.color.rgb = RGBColor(75, 85, 99)
+                row = ov_table.rows[row_idx + 1]
+                row.cells[0].paragraphs[0].add_run(str(sec_num))
+                row.cells[1].paragraphs[0].add_run(str(sev))
+                row.cells[2].paragraphs[0].add_run(str(rtype))
+                r_status = row.cells[3].paragraphs[0].add_run(status_text)
+                if status_text == "Accepted":
+                    r_status.font.color.rgb = RGBColor(22, 163, 74)
+                elif status_text == "Rejected":
+                    r_status.font.color.rgb = RGBColor(220, 38, 38)
+                else:
+                    r_status.font.color.rgb = RGBColor(79, 70, 229)
 
-            doc.add_paragraph("-" * 40)
+        doc.add_paragraph()
 
-        out_path = os.path.join(settings.EXPORT_DIR, output_filename)
-        doc.save(out_path)
-        return out_path
+        # Section 3: Detailed Clauses with Track Changes and Decision Branching
+        h3 = doc.add_heading("3. Detailed Clause Redlines (OpenXML Track Changes)", level=1)
+        h3.paragraph_format.space_before = Pt(14)
+
+        if not redlines:
+            p = doc.add_paragraph("No contractual redlines flagged for this document.")
+            p.runs[0].font.italic = True
+        else:
+            for idx, item in enumerate(redlines):
+                sec_num = item.get("section_number") or item.get("clause_id") or f"Section {idx+1}"
+                sev = item.get("risk_severity") or "HIGH"
+                cat = item.get("diff_type") or item.get("category") or "Uncategorized"
+                accepted = item.get("accepted")
+                diff_tokens = item.get("diff_tokens", [])
+                orig_text = item.get("original_text", "")
+                rationale = item.get("legal_rationale", "Standard consensus compromise.")
+                custom_prompt = item.get("custom_prompt")
+
+                if accepted is True:
+                    status_text = "ACCEPTED"
+                elif accepted is False:
+                    status_text = "REJECTED"
+                else:
+                    status_text = "PENDING REVIEW"
+
+                # Heading incorporates decision status
+                clause_h = doc.add_heading(
+                    f"3.{idx+1} {sec_num} [Severity: {sev} | Decision: {status_text}]",
+                    level=2,
+                )
+                clause_h.paragraph_format.space_before = Pt(10)
+
+                # Decision Branching Output:
+                if accepted is False:
+                    # REJECTED: Original clause retained, no Track Changes insertions
+                    dec_p = doc.add_paragraph()
+                    r_dec = dec_p.add_run("Decision: REJECTED (Original Clause Retained): ")
+                    r_dec.bold = True
+                    r_dec.font.color.rgb = RGBColor(220, 38, 38)
+
+                    orig_p = doc.add_paragraph()
+                    orig_p.paragraph_format.left_indent = Inches(0.2)
+                    orig_p.add_run(orig_text)
+
+                else:
+                    # ACCEPTED or PENDING: Inject genuine Track Changes OpenXML
+                    dec_p = doc.add_paragraph()
+                    r_dec = dec_p.add_run(f"Decision: {status_text} (Track Changes XML Enabled): ")
+                    r_dec.bold = True
+                    if accepted is True:
+                        r_dec.font.color.rgb = RGBColor(22, 163, 74)
+                    else:
+                        r_dec.font.color.rgb = RGBColor(79, 70, 229)
+
+                    tc_para = doc.add_paragraph()
+                    tc_para.paragraph_format.left_indent = Inches(0.2)
+
+                    for token in diff_tokens:
+                        token_type = token.get("type", "equal")
+                        token_text = token.get("text", "")
+                        if not token_text:
+                            continue
+
+                        if token_type == "equal":
+                            tc_para.add_run(token_text)
+                        elif token_type == "delete":
+                            self._add_track_change_deletion(
+                                tc_para, token_text, change_counter, utc_iso
+                            )
+                            change_counter += 1
+                        elif token_type == "insert":
+                            self._add_track_change_insertion(
+                                tc_para, token_text, change_counter, utc_iso
+                            )
+                            change_counter += 1
+
+                # Custom Prompt callout if present
+                if custom_prompt:
+                    cp_para = doc.add_paragraph()
+                    cp_run = cp_para.add_run("Lawyer Custom Prompt: ")
+                    cp_run.bold = True
+                    cp_para.add_run(custom_prompt)
+                    cp_para.paragraph_format.left_indent = Inches(0.2)
+
+                # Legal Rationale Box
+                rat_para = doc.add_paragraph()
+                rat_run = rat_para.add_run("Legal Rationale & Context: ")
+                rat_run.bold = True
+                rat_para.add_run(rationale)
+                rat_para.paragraph_format.space_after = Pt(8)
+
+        # Section 4: Obligations Matrix
+        if obligations:
+            h4 = doc.add_heading("4. Structured Obligations & Compliance Calendar", level=1)
+            h4.paragraph_format.space_before = Pt(14)
+
+            ob_table = doc.add_table(rows=1 + len(obligations), cols=5)
+            ob_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+            ob_table.style = "Table Grid"
+
+            headers = ["Type", "Obligor", "Recipient", "Due Date / Trigger", "Penalty for Breach"]
+            for col_idx, header in enumerate(headers):
+                cell = ob_table.rows[0].cells[col_idx]
+                r = cell.paragraphs[0].add_run(header)
+                r.bold = True
+
+            for row_idx, ob in enumerate(obligations):
+                row = ob_table.rows[row_idx + 1]
+                row.cells[0].paragraphs[0].add_run(str(ob.get("obligation_type", "")))
+                row.cells[1].paragraphs[0].add_run(str(ob.get("obligor", "")))
+                row.cells[2].paragraphs[0].add_run(str(ob.get("recipient", "")))
+                row.cells[3].paragraphs[0].add_run(str(ob.get("due_date_or_trigger", "")))
+                row.cells[4].paragraphs[0].add_run(str(ob.get("penalty_for_breach", "")))
+
+        # Save document
+        filename = f"ContractMind_Redline_{contract_id[:8]}.docx"
+        out_path = settings.EXPORT_DIR / filename
+        doc.save(str(out_path))
+        return str(out_path)
 
 
 export_service = ExportService()

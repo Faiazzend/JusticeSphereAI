@@ -1,0 +1,14 @@
+SECTION 1. DEFINITIONS AND CLOSING TERMS
+1.1 Working Capital Statement. Within ninety (90) days following the Closing Date, Buyer shall prepare and deliver the final Working Capital Statement. If the Net Working Capital is less than the Target Working Capital, Seller shall promptly forfeit indemnity escrow reserves.
+
+SECTION 2. INDEMNIFICATION AND BASKETS
+2.1 Tipping Basket. Seller shall indemnify, defend, and hold harmless Buyer from and against all Losses arising from breaches of Seller Representations; provided, however, that Buyer shall not be entitled to indemnification until aggregate Losses exceed the de minimis threshold of $150,000, whereupon Seller shall be liable for all Losses from dollar one (first-dollar tipping basket), without any aggregate liability super-cap.
+
+SECTION 3. REPRESENTATIONS AND WARRANTIES
+3.1 Non-Infringement. To the actual knowledge of the chief executive officer of Seller, without any duty of reasonable inquiry or patent clearance review, Seller does not warrant that its software products infringe or misappropriate any third-party intellectual property or trade secrets.
+
+SECTION 4. ESCROW AND OPERATIONAL COVENANTS
+4.1 Earn-Out Discretion. During the Earn-Out Period, Buyer shall exercise unfettered operational discretion over the acquired business, and technology escrow release conditions shall be subject to Buyer's sole approval.
+
+SECTION 5. GOVERNING LAW AND DISPUTE RESOLUTION
+5.1 Venue. This Agreement and any dispute hereunder shall be governed exclusively by the substantive laws of Switzerland, and shall be submitted to the ICC rules of arbitration in Geneva, Switzerland.

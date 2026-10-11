@@ -1,0 +1,11 @@
+SECTION 1. SCOPE AND DATA PROCESSING
+1.1 Ingestion and Model Training. Customer hereby grants Cloud Provider a perpetual, worldwide license to ingest, de-identify, and utilize Customer Data, Prompts, and Model Outputs to train, fine-tune, and improve foundational AI models and neural model checkpoints.
+
+SECTION 2. SUB-PROCESSORS AND PRIVACY
+2.1 Sub-Processor Discretion. Cloud Provider may appoint third-party sub-processors without prior notice to Customer. In the event of a security incident or data breach, Cloud Provider shall notify Customer within forty-eight (48) hours of confirmation.
+
+SECTION 3. SERVICE LEVEL AGREEMENT AND REMEDIES
+3.1 Monthly Uptime. Cloud Provider shall target a monthly uptime of 99.5%. In the event uptime falls below this threshold, service credit remittance shall be Customer's sole and exclusive financial remedy.
+
+SECTION 4. DATA DESTRUCTION UPON TERMINATION
+4.1 Sanitization. Following termination, Customer may request data destruction, and Provider shall delete customer data within sixty (60) days in accordance with standard internal routines.

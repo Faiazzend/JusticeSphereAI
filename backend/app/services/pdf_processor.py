@@ -1,112 +1,139 @@
-import os
 import re
+from pathlib import Path
+from typing import List, Tuple, Dict, Any
+
 try:
-    import pymupdf as fitz
+    import fitz  # PyMuPDF
 except ImportError:
-    import fitz  # PyMuPDF fallback
+    fitz = None
+
 from app.core.pii_redactor import pii_redactor
 
 
 class PDFProcessor:
-    """Hybrid PDF extractor supporting native text, layout segmentation, table parsing, and PII sanitization."""
-
-    @staticmethod
-    def extract_text_and_sections(file_path: str, redact_pii: bool = True) -> Tuple[str, List[Dict[str, Any]]]:
-        """
-        Reads a PDF file, extracts raw text, detects sections, and parses tabular structures.
-        Returns: (full_raw_text, list_of_sections)
-        """
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"PDF file not found: {file_path}")
-
-        doc = fitz.open(file_path)
-        full_text_chunks = []
-        page_texts = []
-
-        for page_num in range(len(doc)):
-            page = doc[page_num]
-            text = page.get_text("text")
-            
-            # Check for tables using pymupdf tabula / find_tables if supported
-            table_markdown = ""
-            try:
-                tables = page.find_tables()
-                if tables and len(tables.tables) > 0:
-                    for tbl in tables.tables:
-                        df = tbl.extract()
-                        if df:
-                            # Format as markdown table
-                            header = " | ".join(str(cell or "").strip() for cell in df[0])
-                            separator = " | ".join(["---"] * len(df[0]))
-                            rows = [" | ".join(str(cell or "").strip() for cell in row) for row in df[1:]]
-                            table_markdown += f"\n\n[TABLE EXHIBIT - Page {page_num + 1}]\n| {header} |\n| {separator} |\n"
-                            for r in rows:
-                                table_markdown += f"| {r} |\n"
-            except Exception:
-                table_markdown = ""
-
-            page_content = text + ("\n" + table_markdown if table_markdown else "")
-            page_texts.append({"page": page_num + 1, "text": page_content})
-            full_text_chunks.append(page_content)
-
-        doc.close()
-        full_text = "\n\n".join(full_text_chunks)
-
-        # Sanitize sensitive PII (SSNs, credit cards, bank accounts)
-        if redact_pii:
-            full_text, _ = pii_redactor.redact(full_text)
-
-        # Segment full text into semantic sections using regex
-        sections = PDFProcessor._segment_sections(full_text, page_texts)
-        return full_text, sections
-
-    @staticmethod
-    def _segment_sections(full_text: str, page_texts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Segments raw contract text into structured clause sections."""
-        # Matches patterns like:
-        # "1. Definitions", "SECTION 2. INDEMNIFICATION", "3.1 Payment Terms", "Article IV - Warranties"
-        section_pattern = re.compile(
+    def __init__(self):
+        self.section_pattern = re.compile(
             r"(?:\n|^)(?:SECTION|ARTICLE|CLAUSE)?\s*(\d+(?:\.\d+)*|[IVXLCDM]+)[\.\:\-\s]+([A-Z][A-Za-z0-9\s\,\-\&\/\(\)]+)(?=\n)",
-            re.IGNORECASE
+            re.MULTILINE,
         )
 
-        matches = list(section_pattern.finditer(full_text))
-        sections = []
+    def _format_markdown_table(self, table_matrix: List[List[Any]], page_num: int) -> str:
+        """Convert a 2D matrix into a clean Markdown table exhibit."""
+        if not table_matrix or not table_matrix[0]:
+            return ""
 
-        if not matches:
-            # Fallback: Segment by double newlines or paragraph blocks
-            paragraphs = [p.strip() for p in full_text.split("\n\n") if len(p.strip()) > 30]
-            for idx, para in enumerate(paragraphs):
+        headers = [str(c or "").strip().replace("\n", " ") for c in table_matrix[0]]
+        # Fill empty headers
+        headers = [h if h else f"Col {i+1}" for i, h in enumerate(headers)]
+
+        lines = [f"\n[TABLE EXHIBIT - Page {page_num}]"]
+        lines.append("| " + " | ".join(headers) + " |")
+        lines.append("| " + " | ".join(["---"] * len(headers)) + " |")
+
+        for row in table_matrix[1:]:
+            cells = [str(c or "").strip().replace("\n", " ") for c in row]
+            # Ensure cell count matches header count
+            if len(cells) < len(headers):
+                cells += [""] * (len(headers) - len(cells))
+            lines.append("| " + " | ".join(cells[:len(headers)]) + " |")
+
+        lines.append("\n")
+        return "\n".join(lines)
+
+    def extract_from_pdf(self, file_path: str) -> Tuple[str, List[Dict[str, Any]]]:
+        """
+        Ingests PDF, extracts page text and tabular layouts, runs PII redaction,
+        and parses into structured sections.
+        """
+        path = Path(file_path)
+        full_text_parts = []
+        page_offsets = []  # (start_char, page_num)
+
+        # Handle non-PDF or fallback text files
+        if path.suffix.lower() != ".pdf" or fitz is None:
+            if path.exists():
+                text = path.read_text(encoding="utf-8", errors="ignore")
+            else:
+                text = ""
+            redacted_text, _ = pii_redactor.redact(text)
+            sections = self.segment_sections(redacted_text)
+            return redacted_text, sections
+
+        doc = fitz.open(file_path)
+        try:
+            for page_idx in range(len(doc)):
+                page = doc[page_idx]
+                page_num = page_idx + 1
+
+                # 1. Extract plain text
+                page_text = page.get_text("text") or ""
+
+                # 2. Extract tables
+                table_md = ""
+                try:
+                    tabs = page.find_tables()
+                    if tabs and tabs.tables:
+                        for tab in tabs:
+                            table_matrix = tab.extract()
+                            if table_matrix:
+                                table_md += self._format_markdown_table(table_matrix, page_num)
+                except Exception:
+                    pass
+
+                combined_page_text = page_text
+                if table_md:
+                    combined_page_text += "\n" + table_md
+
+                full_text_parts.append(combined_page_text)
+        finally:
+            doc.close()
+
+        combined_document = "\n\n".join(full_text_parts)
+
+        # 3. PII Redaction
+        redacted_document, _ = pii_redactor.redact(combined_document)
+
+        # 4. Section Segmentation
+        sections = self.segment_sections(redacted_document)
+        return redacted_document, sections
+
+    def segment_sections(self, text: str) -> List[Dict[str, Any]]:
+        """
+        Segments contract text using numbered headers.
+        Falls back to paragraph blocks if no structured headers are detected.
+        """
+        matches = list(self.section_pattern.finditer(text))
+        sections: List[Dict[str, Any]] = []
+
+        if matches:
+            for i, match in enumerate(matches):
+                sec_num = match.group(1).strip()
+                title = match.group(2).strip()
+                start_pos = match.end()
+
+                end_pos = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+                content = text[start_pos:end_pos].strip()
+
                 sections.append({
-                    "section_number": f"Para {idx + 1}",
-                    "title": para[:40] + "...",
-                    "content": para,
-                    "page_number": 1
+                    "section_number": sec_num,
+                    "title": title,
+                    "content": content,
+                    "page_number": max(1, text[:match.start()].count("\f") + 1)
                 })
-            return sections
-
-        for i, match in enumerate(matches):
-            section_num = match.group(1).strip()
-            title = match.group(2).strip()
-            start_pos = match.end()
-            end_pos = matches[i + 1].start() if (i + 1) < len(matches) else len(full_text)
-            content = full_text[start_pos:end_pos].strip()
-
-            # Estimate page number
-            estimated_page = 1
-            char_count = 0
-            for pt in page_texts:
-                char_count += len(pt["text"])
-                if char_count >= match.start():
-                    estimated_page = pt["page"]
-                    break
-
-            sections.append({
-                "section_number": section_num,
-                "title": title,
-                "content": content,
-                "page_number": estimated_page
-            })
+        else:
+            # Fallback to paragraph chunks
+            paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+            for idx, para in enumerate(paragraphs):
+                # Try to extract the first line as title
+                lines = para.split("\n", 1)
+                title = lines[0][:80] if lines else f"Section {idx+1}"
+                content = lines[1] if len(lines) > 1 else para
+                sections.append({
+                    "section_number": str(idx + 1),
+                    "title": title,
+                    "content": content,
+                    "page_number": max(1, text[:text.find(para)].count("\f") + 1)
+                })
 
         return sections
 

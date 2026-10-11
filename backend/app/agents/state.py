@@ -13,13 +13,11 @@ class ContractReviewState(TypedDict):
     llm_provider: Optional[str]
     model_name: Optional[str]
     api_key_override: Optional[str]
-    
-    # Evolving agent data
     identified_risks: List[Dict[str, Any]]
     debate_transcript: List[Dict[str, Any]]
     redlines: List[Dict[str, Any]]
     obligations: List[Dict[str, Any]]
-    risk_summary: Dict[str, Any]
+    risk_summary: Dict[str, int]
     overall_score: float
     current_status: str
     error: Optional[str]

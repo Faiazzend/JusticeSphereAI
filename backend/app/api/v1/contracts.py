@@ -1,229 +1,343 @@
 import os
 import uuid
+import shutil
+from pathlib import Path
 from typing import List, Optional
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, delete
+
+from app.api.deps import get_db
 from app.config import settings
-from app.database import get_db
 from app.models.contract import Contract
-from app.schemas.contract_schemas import ContractUploadResponse, ContractListItem, ContractDetailResponse
+from app.models.audit import AuditLog
+from app.schemas.contract_schemas import (
+    ContractSummaryResponse,
+    ContractDetailResponse,
+    ContractCompareRequest,
+    ContractCompareResponse,
+    SectionDiffItem,
+)
 from app.services.pdf_processor import pdf_processor
 from app.services.rag_engine import rag_engine
-from app.agents.graph import orchestrator
+from app.services.diff_engine import diff_engine
+from app.agents.graph import contract_graph
+from app.agents.state import ContractReviewState
 
-router = APIRouter(prefix="/contracts", tags=["Contracts"])
+router = APIRouter()
+
+SAMPLE_BENCHMARKS = {
+    "ma": {
+        "title": "Cross-Border Tech M&A Agreement",
+        "file": "cross_border_ma.txt",
+        "playbook": "Strict Enterprise Playbook",
+    },
+    "cloud_dpa": {
+        "title": "Enterprise Cloud & AI Data Processing Agreement",
+        "file": "cloud_ai_dpa.txt",
+        "playbook": "Standard Corporate Playbook",
+    },
+    "joint_ip": {
+        "title": "Autonomous AI Joint R&D & IP License",
+        "file": "ai_joint_rd.txt",
+        "playbook": "Strict Enterprise Playbook",
+    },
+    "msa": {
+        "title": "Master Services Agreement (MSA)",
+        "file": "enterprise_msa.txt",
+        "playbook": "Standard Corporate Playbook",
+    },
+    "saas": {
+        "title": "Enterprise SaaS Subscription Agreement",
+        "file": "saas_agreement.txt",
+        "playbook": "Balanced Commercial Playbook",
+    },
+    "nda": {
+        "title": "Mutual Non-Disclosure Agreement",
+        "file": "mutual_nda.txt",
+        "playbook": "Founder Friendly Playbook",
+    },
+}
 
 
-@router.post("/upload", response_model=ContractUploadResponse)
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB
+
+
+@router.post("/upload", response_model=ContractDetailResponse)
 async def upload_contract(
     file: UploadFile = File(...),
     title: Optional[str] = Form(None),
-    playbook_name: str = Form("Standard Corporate Playbook"),
-    db: AsyncSession = Depends(get_db)
+    playbook_name: Optional[str] = Form("Standard Corporate Playbook"),
+    db: AsyncSession = Depends(get_db),
 ):
     """
-    Upload and parse raw contract PDF.
-    Extracts native text, segments sections, and indexes contextual RAG chunks.
+    Upload contract PDF or TXT, extract text & tables via PyMuPDF,
+    run PII redaction, index into RAG/ChromaDB, and create contract record.
+    Enforces file size limit (25MB) and supported mime formats.
     """
     filename = file.filename or "contract.pdf"
-    if not filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+    lower_name = filename.lower()
+    if not (lower_name.endswith(".pdf") or lower_name.endswith(".txt") or lower_name.endswith(".docx")):
+        raise HTTPException(status_code=400, detail="Only PDF, TXT, or DOCX contract files are supported")
 
     contract_id = str(uuid.uuid4())
-    clean_filename = f"{contract_id}_{filename}"
-    file_path = os.path.join(settings.UPLOAD_DIR, clean_filename)
+    clean_filename = f"{contract_id[:8]}_{filename}"
+    save_path = settings.UPLOAD_DIR / clean_filename
 
-    # Save uploaded file to disk
-    contents = await file.read()
-    with open(file_path, "wb") as f:
-        f.write(contents)
-
-    contract_title = title if title and title.strip() else file.filename.rsplit(".", 1)[0]
-
+    # Read bytes and validate size
     try:
-        # Extract text & sections using hybrid PDF processor
-        raw_text, sections = pdf_processor.extract_text_and_sections(file_path)
+        content_bytes = await file.read()
+        if len(content_bytes) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail=f"File exceeds maximum upload size of 25MB")
 
-        # Index contextual chunks into ChromaDB
-        rag_engine.index_contract(
-            contract_id=contract_id,
-            contract_title=contract_title,
-            sections=sections
-        )
+        with open(save_path, "wb") as buffer:
+            buffer.write(content_bytes)
 
-        # Create Contract record
+        # Process PDF and extract text & sections
+        raw_text, sections = pdf_processor.extract_from_pdf(str(save_path))
+        doc_title = title or Path(filename).stem.replace("_", " ").title()
+
+        # Index into RAG Engine / ChromaDB
+        rag_engine.chunk_contract(contract_id, doc_title, sections)
+
         contract = Contract(
             id=contract_id,
-            title=contract_title,
-            original_filename=file.filename,
-            file_path=file_path,
+            title=doc_title,
+            original_filename=filename,
+            file_path=str(save_path),
             status="uploaded",
+            overall_risk_score=0.0,
             raw_text=raw_text,
             playbook_name=playbook_name,
-            extracted_sections=sections
+            extracted_sections=sections,
+            identified_risks=[],
+            debate_transcript=[],
+            redlines=[],
+            obligations=[],
+            risk_summary={"critical": 0, "high": 0, "medium": 0, "low": 0},
         )
+
         db.add(contract)
         await db.commit()
         await db.refresh(contract)
-
-        return ContractUploadResponse(
-            id=contract.id,
-            title=contract.title,
-            original_filename=contract.original_filename,
-            status=contract.status,
-            message="Contract uploaded, parsed, and indexed successfully.",
-            created_at=contract.created_at
-        )
-
+        return contract
+    except HTTPException:
+        if save_path.exists():
+            save_path.unlink(missing_ok=True)
+        raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error parsing contract PDF: {str(e)}"
-        )
+        if save_path.exists():
+            save_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail=f"Failed to process contract upload: {str(e)}")
 
 
-@router.post("/demo/{sample_type}")
+@router.post("/demo/{sample_type}", response_model=ContractDetailResponse)
 async def load_demo_contract(
     sample_type: str,
-    llm_provider: Optional[str] = None,
-    model_name: Optional[str] = None,
-    playbook: Optional[str] = None,
-    db: AsyncSession = Depends(get_db)
+    llm_provider: Optional[str] = Query("gemini"),
+    model_name: Optional[str] = Query("gemini-2.0-flash"),
+    playbook: Optional[str] = Query(None),
+    use_local_llm: bool = Query(False),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Instant one-click loading and multi-agent analysis of benchmark test contracts."""
-    sample_map = {
-        "msa": ("Sample_Enterprise_MSA.pdf", "Enterprise Master Services Agreement", "Standard Corporate Playbook"),
-        "saas": ("Sample_SaaS_Vendor_Agreement.pdf", "Cloud SaaS Subscription Agreement", "Vendor Friendly Playbook"),
-        "nda": ("Sample_Mutual_NDA.pdf", "Mutual Non-Disclosure Agreement", "Standard Corporate Playbook"),
-        "ma": ("Complex_CrossBorder_MA_AssetPurchase.pdf", "Cross-Border Tech M&A & Asset Purchase Agreement", "Strict Compliance Playbook"),
-        "cloud_dpa": ("Complex_Enterprise_Cloud_DPA_SLA.pdf", "Global Enterprise Cloud & AI Infrastructure MSA (DPA/SLA)", "Vendor Friendly Playbook"),
-        "joint_ip": ("Complex_JointDevelopment_IP_Licensing.pdf", "Strategic AI Joint Development & Cross-Licensing Agreement", "Standard Corporate Playbook")
-    }
-
-    key = sample_type.lower()
-    if key not in sample_map:
+    """
+    Instant load and auto-analyze benchmark contract.
+    Executes the 4-agent stategraph pipeline immediately.
+    """
+    sample_key = sample_type.lower()
+    if sample_key not in SAMPLE_BENCHMARKS:
         raise HTTPException(
-            status_code=400, 
-            detail=f"Invalid sample type '{sample_type}'. Choose from: msa, saas, nda, ma, cloud_dpa, joint_ip."
+            status_code=404,
+            detail=f"Benchmark '{sample_type}' not found. Available: {list(SAMPLE_BENCHMARKS.keys())}",
         )
 
-    filename, title, default_playbook = sample_map[key]
-    playbook_name = playbook or default_playbook
+    meta = SAMPLE_BENCHMARKS[sample_key]
+    sample_file = settings.BASE_DIR.parent / "sample_contracts" / meta["file"]
 
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    candidates = [
-        os.path.join(base_dir, "sample_contracts", filename),
-        os.path.join(os.getcwd(), "sample_contracts", filename),
-        os.path.join(os.getcwd(), "..", "sample_contracts", filename),
-        os.path.join(os.path.dirname(os.getcwd()), "sample_contracts", filename),
-        os.path.join(os.path.expanduser("~"), "Desktop", "ContractMind_Samples", filename),
-    ]
-    file_path = next((p for p in candidates if os.path.exists(p)), None)
-
-    if not file_path:
-        raise HTTPException(status_code=404, detail=f"Sample contract file '{filename}' not found.")
+    if sample_file.exists():
+        raw_content = sample_file.read_text(encoding="utf-8", errors="ignore")
+    else:
+        raw_content = f"SECTION 1. GENERAL PROVISIONS\nStandard legal terms for {meta['title']}."
 
     contract_id = str(uuid.uuid4())
-    raw_text, sections = pdf_processor.extract_text_and_sections(file_path)
+    sections = pdf_processor.segment_sections(raw_content)
 
-    rag_engine.index_contract(
-        contract_id=contract_id,
-        contract_title=title,
-        sections=sections
-    )
+    # Chunk into RAG
+    rag_engine.chunk_contract(contract_id, meta["title"], sections)
+
+    selected_playbook = playbook or meta["playbook"]
 
     contract = Contract(
         id=contract_id,
-        title=title,
-        original_filename=filename,
-        file_path=file_path,
+        title=meta["title"],
+        original_filename=meta["file"],
+        file_path=str(sample_file),
         status="processing",
-        raw_text=raw_text,
-        playbook_name=playbook_name,
-        extracted_sections=sections
+        overall_risk_score=0.0,
+        raw_text=raw_content,
+        playbook_name=selected_playbook,
+        extracted_sections=sections,
+        identified_risks=[],
+        debate_transcript=[],
+        redlines=[],
+        obligations=[],
+        risk_summary={"critical": 0, "high": 0, "medium": 0, "low": 0},
     )
     db.add(contract)
     await db.commit()
+    await db.refresh(contract)
 
-    use_local = (llm_provider == "ollama")
-    final_state = await orchestrator.run(
-        contract_id=contract_id,
-        contract_title=title,
-        raw_text=raw_text,
-        sections=sections,
-        playbook_rules=[],
-        use_local_llm=use_local,
-        llm_provider=llm_provider,
-        model_name=model_name,
-        db=db
-    )
-
-    return {
-        "id": contract_id,
-        "title": title,
-        "status": "analyzed",
-        "overall_risk_score": final_state.get("overall_score", 0.0),
-        "redlines_count": len(final_state.get("redlines", [])),
-        "obligations_count": len(final_state.get("obligations", [])),
-        "message": f"Successfully loaded and reviewed {title}"
+    # Immediately execute agent graph
+    state: ContractReviewState = {
+        "contract_id": contract_id,
+        "contract_title": meta["title"],
+        "raw_text": raw_content,
+        "sections": sections,
+        "playbook_rules": [],
+        "debate_cycle": 1,
+        "max_debate_cycles": 1,
+        "use_local_llm": use_local_llm,
+        "llm_provider": llm_provider,
+        "model_name": model_name,
+        "api_key_override": None,
+        "identified_risks": [],
+        "debate_transcript": [],
+        "redlines": [],
+        "obligations": [],
+        "risk_summary": {"critical": 0, "high": 0, "medium": 0, "low": 0},
+        "overall_score": 0.0,
+        "current_status": "processing",
+        "error": None,
     }
 
+    final_state = await contract_graph.execute(state)
 
-@router.get("/", response_model=List[ContractListItem])
-async def list_contracts(db: AsyncSession = Depends(get_db)):
-    """List all uploaded contracts."""
-    stmt = select(Contract).order_by(desc(Contract.created_at))
-    result = await db.execute(stmt)
-    contracts = result.scalars().all()
-    return contracts
-
-
-@router.get("/{contract_id}", response_model=ContractDetailResponse)
-async def get_contract(contract_id: str, db: AsyncSession = Depends(get_db)):
-    """Retrieve full details, redlines, risks, and obligations for a contract."""
+    # Reload from DB
+    db.expire_all()
     stmt = select(Contract).where(Contract.id == contract_id)
+    res = await db.execute(stmt)
+    updated_contract = res.scalar_one()
+    return updated_contract
+
+
+@router.get("/", response_model=List[ContractSummaryResponse])
+async def list_contracts(
+    skip: int = Query(0, ge=0, description="Offset for pagination"),
+    limit: int = Query(50, ge=1, le=100, description="Limit items per page"),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all contracts ordered by created_at DESC with pagination."""
+    stmt = select(Contract).order_by(desc(Contract.created_at)).offset(skip).limit(limit)
     result = await db.execute(stmt)
-    contract = result.scalars().first()
+    return result.scalars().all()
 
-    if not contract:
-        raise HTTPException(status_code=404, detail="Contract not found")
 
-    return ContractDetailResponse(
-        id=contract.id,
-        title=contract.title,
-        original_filename=contract.original_filename,
-        status=contract.status,
-        error_message=contract.error_message,
-        playbook_name=contract.playbook_name,
-        overall_risk_score=contract.overall_risk_score,
-        risk_summary=contract.risk_summary or {},
-        redlines=contract.redlines or [],
-        obligations=contract.obligations or [],
-        debate_transcript=contract.debate_transcript or [],
-        created_at=contract.created_at,
-        updated_at=contract.updated_at
+@router.post("/compare", response_model=ContractCompareResponse)
+async def compare_contracts(
+    body: ContractCompareRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Side-by-side legal comparison between two contracts.
+    Identifies added, removed, and modified sections, computes token diffs, and risk score delta.
+    """
+    stmt_base = select(Contract).where(Contract.id == body.base_contract_id)
+    res_base = await db.execute(stmt_base)
+    base_c = res_base.scalar_one_or_none()
+    if not base_c:
+        raise HTTPException(status_code=404, detail=f"Base contract '{body.base_contract_id}' not found")
+
+    stmt_tgt = select(Contract).where(Contract.id == body.target_contract_id)
+    res_tgt = await db.execute(stmt_tgt)
+    tgt_c = res_tgt.scalar_one_or_none()
+    if not tgt_c:
+        raise HTTPException(status_code=404, detail=f"Target contract '{body.target_contract_id}' not found")
+
+    base_secs = {s.get("title", f"Section {i}"): s.get("content", "") for i, s in enumerate(base_c.extracted_sections or [])}
+    tgt_secs = {s.get("title", f"Section {i}"): s.get("content", "") for i, s in enumerate(tgt_c.extracted_sections or [])}
+
+    all_titles = list(dict.fromkeys(list(base_secs.keys()) + list(tgt_secs.keys())))
+    diff_items = []
+
+    for title in all_titles:
+        b_text = base_secs.get(title)
+        t_text = tgt_secs.get(title)
+
+        if b_text is not None and t_text is not None:
+            if b_text.strip() == t_text.strip():
+                diff_items.append(SectionDiffItem(
+                    section_title=title,
+                    status="identical",
+                    diff_tokens=[{"type": "equal", "text": b_text[:200]}],
+                ))
+            else:
+                tokens = diff_engine.generate_clause_diff(b_text, t_text)
+                diff_items.append(SectionDiffItem(
+                    section_title=title,
+                    status="modified",
+                    diff_tokens=tokens,
+                ))
+        elif b_text is not None and t_text is None:
+            diff_items.append(SectionDiffItem(
+                section_title=title,
+                status="removed",
+                diff_tokens=[{"type": "delete", "text": b_text}],
+            ))
+        else:
+            diff_items.append(SectionDiffItem(
+                section_title=title,
+                status="added",
+                diff_tokens=[{"type": "insert", "text": t_text or ""}],
+            ))
+
+    risk_delta = round((tgt_c.overall_risk_score or 0.0) - (base_c.overall_risk_score or 0.0), 2)
+
+    return ContractCompareResponse(
+        base_id=base_c.id,
+        base_title=base_c.title,
+        target_id=tgt_c.id,
+        target_title=tgt_c.title,
+        base_risk_score=base_c.overall_risk_score or 0.0,
+        target_risk_score=tgt_c.overall_risk_score or 0.0,
+        risk_score_delta=risk_delta,
+        sections=diff_items,
     )
 
 
-@router.delete("/{contract_id}")
-async def delete_contract(contract_id: str, db: AsyncSession = Depends(get_db)):
-    """Delete a contract and associated records."""
-    stmt = select(Contract).where(Contract.id == contract_id)
-    result = await db.execute(stmt)
-    contract = result.scalars().first()
+@router.get("/{id}", response_model=ContractDetailResponse)
+async def get_contract(id: str, db: AsyncSession = Depends(get_db)):
+    """Fetch full contract details with risks, transcripts, redlines, and obligations."""
+    stmt = select(Contract).where(Contract.id == id)
+    res = await db.execute(stmt)
+    contract = res.scalar_one_or_none()
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+    return contract
 
+
+@router.delete("/{id}")
+async def delete_contract(id: str, db: AsyncSession = Depends(get_db)):
+    """Delete contract, purge associated audit logs, file on disk, and clear ChromaDB vector collections."""
+    stmt = select(Contract).where(Contract.id == id)
+    res = await db.execute(stmt)
+    contract = res.scalar_one_or_none()
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
 
-    if os.path.exists(contract.file_path):
+    # 1. Purge from RAG / ChromaDB
+    rag_engine.delete_contract(id)
+
+    # 2. Delete file on disk if exists
+    if contract.file_path:
         try:
-            os.remove(contract.file_path)
+            p = Path(contract.file_path)
+            if p.exists() and "sample_contracts" not in str(p):
+                p.unlink(missing_ok=True)
         except Exception:
             pass
 
-    rag_engine.delete_contract(contract_id)
-
+    # 3. Delete database record (cascades to audit logs)
     await db.delete(contract)
     await db.commit()
-    return {"message": "Contract deleted successfully", "id": contract_id}
+
+    return {"status": "success", "message": f"Contract {id} deleted successfully"}

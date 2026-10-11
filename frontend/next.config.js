@@ -13,29 +13,25 @@ const nextConfig = {
         destination: '/',
         permanent: false,
       },
-    ]
+    ];
   },
   async rewrites() {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
     return [
       {
         source: '/api/v1/:path*',
-        destination: process.env.BACKEND_URL 
-          ? `${process.env.BACKEND_URL}/api/v1/:path*` 
-          : (process.env.NEXT_PUBLIC_API_URL 
-            ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/:path*` 
-            : 'http://localhost:8000/api/v1/:path*'),
+        destination: `${backendUrl}/api/v1/:path*`,
+      },
+      {
+        source: '/health',
+        destination: `${backendUrl}/health`,
       },
       {
         source: '/mcp/:path*',
-        destination: process.env.BACKEND_URL 
-          ? `${process.env.BACKEND_URL}/mcp/:path*` 
-          : (process.env.NEXT_PUBLIC_API_URL 
-            ? `${process.env.NEXT_PUBLIC_API_URL}/mcp/:path*` 
-            : 'http://localhost:8000/mcp/:path*'),
+        destination: `${backendUrl}/mcp/:path*`,
       },
-    ]
+    ];
   },
-}
+};
 
-module.exports = nextConfig
-
+module.exports = nextConfig;

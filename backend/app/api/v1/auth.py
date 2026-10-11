@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.database import get_db
+from app.api.deps import get_db
 from app.models.user import User
 from app.core.security import verify_password, get_password_hash, create_access_token
 

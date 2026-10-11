@@ -1,204 +1,164 @@
+import time
 from datetime import datetime, timezone
 from typing import Dict, Any, List
+
 from app.agents.state import ContractReviewState
 from app.services.diff_engine import diff_engine
 from app.agents.llm_client import llm_client
+from app.core.token_tracker import token_tracker
+from app.database import AsyncSessionLocal
 
 
-async def redline_node(state: ContractReviewState) -> Dict[str, Any]:
+CONSENSUS_REPLACEMENTS = {
+    "AI Training & Data Privacy": (
+        "Provider covenants and agrees that it shall not ingest, de-identify, process, or utilize Customer Data, "
+        "Prompts, or Model Outputs to train, fine-tune, retrain, or improve any foundational AI models, weights, or neural "
+        "checkpoints, and all customer data processing shall remain strictly isolated in volatile memory during transient runtime."
+    ),
+    "Indemnification & Baskets": (
+        "Indemnifying Party shall defend, indemnify, and hold harmless Indemnified Party from all third-party claims; "
+        "provided, however, that indemnification obligations shall be subject to a true deductible threshold of $100,000 "
+        "and general indemnification liability shall not exceed the aggregate fees paid in the preceding twelve (12) months."
+    ),
+    "Representations & Warranties": (
+        "To the best knowledge of Seller, after conducting reasonable and diligent inquiry of its executive officers, "
+        "engineering directors, and patent counsel, the Software and deliverables do not infringe, misappropriate, or violate "
+        "any valid patent, copyright, trademark, or trade secret of any third party."
+    ),
+    "IP Ownership & Commercialization": (
+        "Customer shall exclusively own all right, title, and interest in and to all Foreground Intellectual Property and deliverables. "
+        "Developer retains ownership of pre-existing Background IP and hereby grants Customer an irrevocable, perpetual, worldwide, "
+        "royalty-free license to use, modify, and distribute such Background IP solely in connection with the deliverables."
+    ),
+    "Escrow & Operational Covenants": (
+        "Developer shall deposit all source code, deployment scripts, and architectural dependencies into an independent technology escrow "
+        "agent on a quarterly basis, subject to release verification upon insolvency or uncured material breach."
+    ),
+    "Limitation of Liability & Super-Caps": (
+        "Except for breaches of confidentiality obligations, gross negligence, or indemnification duties, each party's aggregate liability "
+        "shall be limited to fees paid under this Agreement during the twelve (12) months preceding the claim, subject to a mutual super-cap "
+        "of two times (2.0x) annual contract value for verifiable data protection breaches."
+    ),
+    "Service Level & Remedies": (
+        "Provider guarantees a Monthly Uptime Percentage of 99.9%. In the event uptime falls below 95.0% during any two (2) consecutive "
+        "calendar months, Customer may terminate this Agreement immediately for cause and receive a full pro-rata refund of unearned prepaid fees."
+    ),
+    "Restrictive Covenants & Non-Compete": (
+        "The non-solicitation covenants herein shall remain in effect for a period of twelve (12) consecutive months following the effective date "
+        "of termination, and shall strictly apply to senior engineering personnel directly assigned to the project."
+    ),
+    "Termination & Remedies": (
+        "Either party may terminate this Agreement upon written notice if the other party breaches any material term and fails to cure such breach "
+        "within thirty (30) days following receipt of written notification specifying the breach."
+    ),
+    "Governing Law & Dispute Venue": (
+        "This Agreement shall be governed by and construed in accordance with the substantive laws of the State of Delaware, without regard to "
+        "conflict of laws principles. The parties submit to the exclusive jurisdiction of the state and federal courts located in Wilmington, Delaware."
+    ),
+}
+
+
+async def redline_node(state: ContractReviewState) -> ContractReviewState:
     """
-    Agent C: Redline Synthesizer.
-    Produces consensus redlines, diff tokens, and composite risk scoring for complex agreements.
+    Redline Synthesizer Agent:
+    Synthesizes balanced consensus text for each flagged risk,
+    invokes diff_engine.generate_clause_diff() to generate word-level diff tokens,
+    computes composite overall risk score, and generates consensus statement.
     """
-    identified_risks = state.get("identified_risks", [])
-    debate_transcript = list(state.get("debate_transcript", []))
-
+    start_time = time.time()
+    flagged_risks = state.get("identified_risks", [])
     redlines: List[Dict[str, Any]] = []
-    category_scores: Dict[str, float] = {}
     total_score = 0.0
 
-    critical_count = 0
-    high_count = 0
-    medium_count = 0
-    low_count = 0
+    for idx, risk in enumerate(flagged_risks):
+        cat = risk.get("category", "General Clause")
+        orig_text = risk.get("original_text", "")
+        clause_id = risk.get("clause_reference", f"Section {idx+1}")
+        risk_score = risk.get("score", 60.0)
+        risk_severity = risk.get("severity", "HIGH")
+        total_score += risk_score
 
-    for risk in identified_risks:
-        cat = risk.get("category", "General")
-        sec_num = risk.get("target_section", "1.0")
-        original_text = risk.get("original_content", "")
-        severity = risk.get("severity", "MEDIUM")
-        score = risk.get("score", 50.0)
-
-        total_score += score
-        category_scores[cat] = score
-
-        if severity == "CRITICAL":
-            critical_count += 1
-        elif severity == "HIGH":
-            high_count += 1
-        elif severity == "MEDIUM":
-            medium_count += 1
-        else:
-            low_count += 1
-
-        # Synthesize targeted consensus redline modification
-        if cat == "AI Training & Data Privacy":
-            suggested_text = (
-                "Provider shall not access, ingest, monitor, copy, extract, de-identify, or utilize any Customer Data, "
-                "prompts, model inputs, neural weights, or output artifacts to train, fine-tune, retrain, or improve any "
-                "foundational AI models, neural classifiers, or algorithms owned by Provider or any third party. Customer Data "
-                "shall remain Customer's exclusive trade secret."
-            )
-            rationale = (
-                "Strikes foundation model training license over customer financial prompts and model weights, eliminating "
-                "critical trade secret leakage and GLBA/GDPR controller non-compliance."
-            )
-        elif cat in ("Indemnification & Baskets", "Indemnification"):
-            suggested_text = (
-                "Seller shall have no indemnification liability under Section 5.1(a) until the aggregate amount of actionable "
-                "Losses exceeds ONE MILLION FIVE HUNDRED THOUSAND DOLLARS ($1,500,000 USD) (the 'Deductible Basket'), and Seller shall "
-                "thereafter be liable solely for Losses in excess of such Deductible Basket. The De Minimis Threshold shall be reduced "
-                "to FIFTY THOUSAND DOLLARS ($50,000 USD) per claim."
-            )
-            rationale = (
-                "Converts first-dollar tipping basket into a standard deductible basket, and lowers de minimis threshold to $50,000 "
-                "to preserve actionable operational claims."
-            )
-        elif cat == "Representations & Warranties":
-            suggested_text = (
-                "Seller represents and warrants that, after due and diligent inquiry, Seller is the sole and exclusive owner of all "
-                "Acquired IP free and clear of all liens. Seller further warrants and represents that the operation of the Business as "
-                "currently conducted does not infringe, misappropriate, or violate any patent, copyright, or trade secret of any third party worldwide."
-            )
-            rationale = (
-                "Upgrades subjective actual knowledge qualification to constructive knowledge after diligent inquiry and removes "
-                "dangerous disclaimers of third-party patent non-infringement."
-            )
-        elif cat in ("IP Ownership & Commercialization", "Intellectual Property"):
-            suggested_text = (
-                "Developer shall sole and exclusively own all Foreground IP comprising algorithmic architectures, model weights, "
-                "and software code. Sponsor shall sole and exclusively own all Foreground IP comprising specific validated chemical "
-                "drug compounds and therapeutic matter. Neither party may license or assign Joint IP without the prior written consent "
-                "of, and a fifty-fifty (50/50) accounting of net licensing revenues to, the other party."
-            )
-            rationale = (
-                "Divides ownership by core competencies (AI code to Developer, drug molecules to Sponsor) and closes loophole "
-                "allowing commercial licensing to competitors without profit sharing."
-            )
-        elif cat == "Escrow & Operational Covenants":
-            suggested_text = (
-                "Buyer covenants that post-Closing it shall operate the Business in good faith in the ordinary course, shall not take "
-                "any action with the intent or purpose of reducing or frustrating the Earn-Out Consideration, and shall maintain separate "
-                "books and records. Escrow release triggers are restricted strictly to formal judicial bankruptcy."
-            )
-            rationale = (
-                "Mandates good-faith covenants to prevent deliberate frustration of earn-out milestones and protects proprietary code escrow."
-            )
-        elif cat in ("Limitation of Liability & Super-Caps", "Limitation of Liability"):
-            suggested_text = (
-                "Provider's liability arising out of a breach of Section 4 (DPA / Security Breaches) shall be subject to an aggregate "
-                "super-cap of FIVE TIMES (5x) the annual contract value ($62,000,000 USD). Liability arising from gross negligence, "
-                "willful misconduct, or third-party IP indemnification shall be completely uncapped and unlimited."
-            )
-            rationale = (
-                "Increases DPA security breach super-cap to 5x annual spend ($62M) and removes cap for gross negligence and IP infringement."
-            )
-        elif cat == "Service Level & Remedies":
-            suggested_text = (
-                "The issuance of service credits shall not constitute Customer's sole or exclusive remedy for persistent or severe outages. "
-                "If Provider fails to achieve at least 99.50% uptime in any two (2) calendar months within a rolling six (6) month period, "
-                "Customer may immediately terminate this Agreement for cause, receive a full refund of unearned prepaid fees, and pursue actual direct damages."
-            )
-            rationale = (
-                "Carves out chronic or catastrophic downtime from exclusive remedy limitation, preserving common law damages and right of rescission."
-            )
-        elif cat == "Restrictive Covenants & Non-Compete":
-            suggested_text = (
-                "For a period of twenty-four (24) months following the Closing Date, Seller and its designated Key Executives shall not, "
-                "directly within the specific quantum annealing neural acceleration field, engage in any competitive enterprise within "
-                "North America or Switzerland. Passive investment in publicly traded entities (under 5%) shall be expressly permitted."
-            )
-            rationale = (
-                "Narrows covenant duration to 24 months and restricts geographic and technological scope to ensure legal enforceability."
-            )
-        elif cat == "Termination & Remedies":
-            suggested_text = (
-                "Either party may terminate this Agreement for cause if the other party materially breaches any provision "
-                "and fails to cure such breach within thirty (30) days after receiving written notice specifying the breach."
-            )
-            rationale = (
-                "Institutes mandatory 30-day notice and cure period to prevent arbitrary or abrupt contract cancellation."
-            )
-        else:
-            suggested_text = (
-                "This Agreement shall be governed by the laws of the State of Delaware or New York. "
-                "Any dispute shall be finally settled by binding arbitration administered by the American Arbitration Association (AAA) "
-                "or JAMS before a single neutral arbitrator."
-            )
-            rationale = (
-                "Establishes domestic corporate standard and cost-effective binding single-arbitrator venue."
+        # Select or prompt consensus revised text
+        revised_text = CONSENSUS_REPLACEMENTS.get(cat)
+        if not revised_text:
+            revised_text = (
+                f"[REVISED CONSENSUS: Parties agree to modify {cat} to conform with commercial standard practice, "
+                f"ensuring mutual protection, reasonable cure periods, and proportionate liability allocation.]"
             )
 
-        # Generate diff tokens
-        clause_diff = diff_engine.generate_clause_diff(
-            section_number=sec_num,
-            original_text=original_text[:500] if original_text else "Original clause provisions omitted.",
-            suggested_text=suggested_text,
-            severity=severity,
-            rationale=rationale
-        )
-        redlines.append(clause_diff)
+        # Generate word-level diff tokens
+        diff_tokens = diff_engine.generate_clause_diff(orig_text, revised_text)
 
-    # Compute overall risk score (average of detected risks, normalized)
-    num_risks = len(identified_risks)
-    overall_score = round(min(100.0, total_score / max(1, num_risks)), 1) if num_risks > 0 else 25.0
+        redline_obj = {
+            "id": f"rl_{idx + 1}",
+            "section_number": clause_id,
+            "original_text": orig_text,
+            "suggested_text": revised_text,
+            "diff_type": cat,
+            "risk_severity": risk_severity,
+            "legal_rationale": risk.get("legal_rationale", "Synthesized consensus clause balancing risk."),
+            "diff_tokens": diff_tokens,
+            "accepted": None,  # None: Pending, True: Accepted, False: Rejected
+            "custom_prompt": None,
+            # Aliases for compatibility
+            "clause_id": clause_id,
+            "category": cat,
+            "revised_text": revised_text,
+            "consensus_score": round(max(10.0, risk_score * 0.35), 1),
+        }
+        redlines.append(redline_obj)
 
-    risk_summary = {
-        "overall_score": overall_score,
-        "critical_count": critical_count,
-        "high_count": high_count,
-        "medium_count": medium_count,
-        "low_count": low_count,
-        "category_scores": category_scores
-    }
+    # Composite overall score
+    num_risks = len(flagged_risks)
+    if num_risks > 0:
+        overall_score = round(min(100.0, total_score / max(1, num_risks)), 1)
+    else:
+        overall_score = 0.0
 
-    # Synthesizer consensus statement
-    synth_statement = (
-        f"Consensus Achieved: Synthesized {len(redlines)} precision redlines. "
-        f"Overall Contract Risk Score determined at {overall_score}/100. "
-        "Track Changes and redline diff tokens compiled successfully."
+    # Prompt LLM for consensus synthesizer statement
+    prompt = (
+        f"You are the Redline Synthesizer Agent. You arbitrated the debate across {num_risks} clauses. "
+        f"The composite unmitigated contract risk score was {overall_score}/100. "
+        f"Deliver a balanced arbiter consensus summary announcing the synthesis of Word Track Changes redlines."
+    )
+    system_prompt = (
+        "You are an impartial Legal Arbitrator and Redline Synthesizer. Present a professional consensus resolution statement."
     )
 
-    try:
-        llm_synth, s_model, _ = await llm_client.call_llm(
-            prompt=(
-                f"You are the Redline Synthesizer agent in a contract review system. "
-                f"You reconciled {len(identified_risks)} risks into {len(redlines)} balanced compromises. "
-                f"Composite score is {overall_score}/100. Provide a 2-sentence executive summary stating "
-                f"that a commercially balanced consensus redline suite has been produced protecting both legal integrity and deal closing."
-            ),
-            system_prompt="You are a neutral, highly experienced deal synthesizer reconciling company policy with market practice.",
-            provider=state.get("llm_provider"),
-            model_name=state.get("model_name"),
-            use_local=state.get("use_local_llm", False),
-            temperature=0.2
-        )
-        if llm_synth and len(llm_synth.strip()) > 20:
-            synth_statement = f"[{s_model}] {llm_synth.strip()}"
-    except Exception:
-        pass
+    llm_resp, _, model_used = await llm_client.call_llm(
+        prompt=prompt,
+        system_prompt=system_prompt,
+        provider=state.get("llm_provider"),
+        model_name=state.get("model_name"),
+        use_local=state.get("use_local_llm", False),
+        api_key_override=state.get("api_key_override"),
+    )
 
-    debate_transcript.append({
+    total_latency_ms = (time.time() - start_time) * 1000.0
+
+    async with AsyncSessionLocal() as db:
+        await token_tracker.log_execution(
+            db=db,
+            contract_id=state.get("contract_id"),
+            agent_name="Redline Synthesizer",
+            action="consensus_diff_synthesis",
+            prompt_text=f"Synthesized redlines for {num_risks} clauses",
+            completion_text=llm_resp,
+            latency_ms=total_latency_ms,
+            model_name=state.get("model_name") or "fallback-simulator",
+            details=f"Generated {len(redlines)} Track Changes diffs. Composite score: {overall_score}",
+        )
+
+    transcript = list(state.get("debate_transcript", []))
+    transcript.append({
         "agent_name": "Redline Synthesizer",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "content": synth_statement,
-        "target_clause": "Consensus Redline Suite"
+        "timestamp": datetime.now(timezone.utc).strftime("%H:%M:%S UTC"),
+        "content": llm_resp,
+        "target_clause": "Consensus Redline Synthesis",
     })
 
-    return {
-        "redlines": redlines,
-        "overall_score": overall_score,
-        "risk_summary": risk_summary,
-        "debate_transcript": debate_transcript,
-        "current_status": "Redlines synthesized"
-    }
+    state["redlines"] = redlines
+    state["overall_score"] = overall_score
+    state["debate_transcript"] = transcript
+    state["current_status"] = "redlined"
+    return state

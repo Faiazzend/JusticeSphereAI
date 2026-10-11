@@ -1,20 +1,26 @@
-import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const filePath = path.join(process.cwd(), "public", "index.html");
-  if (fs.existsSync(filePath)) {
-    const html = fs.readFileSync(filePath, "utf-8");
+  try {
+    const htmlPath = path.join(process.cwd(), 'public', 'index.html');
+    const html = fs.readFileSync(htmlPath, 'utf8');
     return new NextResponse(html, {
       status: 200,
       headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
+        'Content-Type': 'text/html; charset=utf-8',
       },
     });
+  } catch (error) {
+    return new NextResponse(
+      '<h1>ContractMind v1.5</h1><p>Unable to load studio UI.</p>',
+      {
+        status: 500,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      }
+    );
   }
-  return new NextResponse("Not Found", { status: 404 });
 }

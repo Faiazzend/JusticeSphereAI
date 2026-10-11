@@ -1,4 +1,4 @@
 from app.agents.state import ContractReviewState
-from app.agents.graph import orchestrator, ContractReviewOrchestrator
+from app.agents.graph import contract_graph, ContractReviewGraph
 
-__all__ = ["ContractReviewState", "orchestrator", "ContractReviewOrchestrator"]
+__all__ = ["ContractReviewState", "contract_graph", "ContractReviewGraph"]

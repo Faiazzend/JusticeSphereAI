@@ -1,113 +1,125 @@
+import time
 from datetime import datetime, timezone
 from typing import Dict, Any, List
+
 from app.agents.state import ContractReviewState
 from app.agents.llm_client import llm_client
+from app.core.token_tracker import token_tracker
+from app.database import AsyncSessionLocal
 
 
-async def opposing_node(state: ContractReviewState) -> Dict[str, Any]:
+CATEGORY_FALLBACK_REBUTTALS = {
+    "AI Training & Data Privacy": (
+        "Opposing Counsel: Our client operates high-throughput multi-tenant infrastructure. "
+        "De-identified telemetry is an engineering prerequisite for dynamic inference routing and token compression. "
+        "We reject a complete prohibition on telemetry, but we will accept an explicit carve-out barring raw customer prompt "
+        "retention for model retraining."
+    ),
+    "Indemnification & Baskets": (
+        "Opposing Counsel: First-dollar tipping indemnification reflects commercial risk allocation negotiated in good faith. "
+        "However, to facilitate consensus, we propose restructuring the tipping basket into a $250,000 true deductible threshold, "
+        "capping general indemnification at 1.0x total contract value."
+    ),
+    "Representations & Warranties": (
+        "Opposing Counsel: Expanding executive knowledge representations without qualifier exposes founders to frivolous third-party assertions. "
+        "We agree to qualify the representation by the knowledge of the Chief Technology Officer after reasonable inquiry of lead architects."
+    ),
+    "IP Ownership & Commercialization": (
+        "Opposing Counsel: Core algorithmic pipelines represent pre-existing background intellectual property. "
+        "We cannot assign pipeline architectures to the customer. We propose retaining title to background IP while granting customer "
+        "an irrevocable, perpetual, royalty-free license to all project deliverables."
+    ),
+    "Escrow & Operational Covenants": (
+        "Opposing Counsel: Unfettered covenants would stifle ongoing product iteration. We agree to quarterly verification of escrow deposit "
+        "materials upon objective technical release triggers."
+    ),
+    "Limitation of Liability & Super-Caps": (
+        "Opposing Counsel: Unlimited liability for consequential damages is commercially uninsurable. We propose a mutual 2.0x super-cap "
+        "strictly for verifiable direct damages stemming from security incidents."
+    ),
+    "Service Level & Remedies": (
+        "Opposing Counsel: Service credits represent the industry standard remedy. We will agree to a chronic breach clause permitting "
+        "termination only if uptime drops below 96% across three consecutive calendar quarters."
+    ),
+    "Restrictive Covenants & Non-Compete": (
+        "Opposing Counsel: Protection of key customer accounts warrants non-solicitation. We will narrow the restriction from five years to 18 months."
+    ),
+}
+
+
+async def opposing_node(state: ContractReviewState) -> ContractReviewState:
     """
-    Agent B: Opposing Counsel Agent.
-    Simulates aggressive counterparty negotiation, pushes back on overly restrictive
-    covenants, and offers commercially viable compromises across complex deals.
-    Utilizes real LLM generation when available, with deterministic legal fallback.
+    Opposing Counsel Agent:
+    Reviews top 4 flagged risks, formulates aggressive commercial pushback,
+    proposes realistic compromise, and appends debate turns.
     """
-    identified_risks = state.get("identified_risks", [])
-    debate_transcript = list(state.get("debate_transcript", []))
-    use_local = state.get("use_local_llm", False)
-    provider = state.get("llm_provider")
-    model_name = state.get("model_name")
+    start_time = time.time()
+    flagged_risks = state.get("identified_risks", [])[:4]
+    transcript = list(state.get("debate_transcript", []))
 
-    for risk in identified_risks[:4]:
+    if not flagged_risks:
+        # Fallback if no risks were flagged
+        rebuttal = "Opposing Counsel: Document represents standard commercial market terms. We see no substantive exposure requiring redline."
+        transcript.append({
+            "agent_name": "Opposing Counsel",
+            "timestamp": datetime.now(timezone.utc).strftime("%H:%M:%S UTC"),
+            "content": rebuttal,
+            "target_clause": "Standard Terms",
+        })
+        state["debate_transcript"] = transcript
+        state["current_status"] = "countered"
+        return state
+
+    for risk in flagged_risks:
         cat = risk.get("category", "")
-        clause_ref = risk.get("clause_reference", "Clause")
-        orig_content = risk.get("original_content", "")[:350]
-        rationale = risk.get("rationale", "")
+        clause_ref = risk.get("clause_reference", "")
+        rationale = risk.get("legal_rationale", "")
 
-        opposing_response = ""
-
-        # Attempt real LLM generation for nuanced legal counter-arguments
         prompt = (
-            f"You are aggressive Opposing Counsel in a commercial contract negotiation.\n"
-            f"The Buyer/Customer auditor flagged Section '{clause_ref}' (Category: {cat}) with this critique: '{rationale}'.\n"
-            f"Relevant clause excerpt: \"{orig_content}\"\n\n"
-            f"In 2-3 concise, legally sophisticated sentences, defend your client's position, push back against the auditor's claim, "
+            f"You are aggressive Opposing Counsel representing the counterparty. "
+            f"The Enterprise Auditor flagged {cat} in {clause_ref} with rationale: '{rationale}'. "
+            f"Defend your client's commercial position, push back firmly against the auditor's claim, "
             f"and propose a realistic, commercially viable compromise."
         )
+        system_prompt = (
+            "You are aggressive Opposing Counsel. Mount a vigorous defense of the counterparty's commercial posture while offering tactical concessions."
+        )
 
-        try:
-            llm_text, used_model, _ = await llm_client.call_llm(
-                prompt=prompt,
-                system_prompt="You are an elite corporate opposing counsel specializing in tech, M&A, and commercial law.",
-                provider=provider,
-                model_name=model_name,
-                use_local=use_local,
-                temperature=0.3
-            )
-            if llm_text and len(llm_text.strip()) > 20:
-                opposing_response = f"[{used_model}] {llm_text.strip()}"
-        except Exception:
-            opposing_response = ""
+        llm_resp, _, model_used = await llm_client.call_llm(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            provider=state.get("llm_provider"),
+            model_name=state.get("model_name"),
+            use_local=state.get("use_local_llm", False),
+            api_key_override=state.get("api_key_override"),
+        )
 
-        # Heuristic fallback if LLM returned empty or offline
-        if not opposing_response:
-            if cat == "AI Training & Data Privacy":
-                opposing_response = (
-                    f"Pushback on {clause_ref}: Aggregated telemetry and anonymized training data is standard across "
-                    "enterprise cloud providers to optimize GPU scheduler algorithms. However, we will concede strict segregation "
-                    "of customer prompt tokens, confidential financial weights, and agree never to train public foundation models on Customer Data."
-                )
-            elif cat in ("Indemnification & Baskets", "Indemnification"):
-                opposing_response = (
-                    f"Commercial response on {clause_ref}: While Seller sought first-dollar tipping protection to account for deal "
-                    "repricing, we will agree to convert the $1.5M threshold into a standard deductible basket, provided the $15M "
-                    "escrow fund represents the sole and exclusive source of recovery for non-fundamental breaches."
-                )
-            elif cat == "Representations & Warranties":
-                opposing_response = (
-                    f"Position on {clause_ref}: A worldwide patent non-infringement warranty without knowledge qualifiers creates "
-                    "untenable exposure in deep tech and quantum computing patent thickets. We propose a compromise: constructive knowledge "
-                    "after reasonable inquiry of our lead patent counsel, coupled with a 50/50 defense cost split."
-                )
-            elif cat in ("IP Ownership & Commercialization", "Intellectual Property"):
-                opposing_response = (
-                    f"Counterparty review on {clause_ref}: As the primary financing partner funding $45M in research, we demand co-ownership "
-                    "of resulting inventions. However, to resolve deadlock, we will agree that software and model weights belong exclusively to "
-                    "Developer, while therapeutic chemical compounds belong to Sponsor, with a 50/50 net profit split on any out-licensing."
-                )
-            elif cat == "Escrow & Operational Covenants":
-                opposing_response = (
-                    f"Negotiation on {clause_ref}: We will agree to restrict technology source code escrow release triggers to formal "
-                    "insolvency or complete abandonment of technical support, excluding ordinary service request disputes."
-                )
-            elif cat in ("Limitation of Liability & Super-Caps", "Limitation of Liability"):
-                opposing_response = (
-                    f"Position on {clause_ref}: A 5x annual contract value super-cap ($62M) for security incidents is acceptable, "
-                    "provided third-party regulatory fines are deducted from the aggregate cap calculation."
-                )
-            elif cat == "Service Level & Remedies":
-                opposing_response = (
-                    f"Response on {clause_ref}: We agree that chronic downtime below 99.50% in two consecutive months grants Customer "
-                    "the right to terminate without penalty, while maintaining service credits as the standard remedy for minor interruptions."
-                )
-            elif cat == "Restrictive Covenants & Non-Compete":
-                opposing_response = (
-                    f"Concession on {clause_ref}: We will agree to narrow the non-compete duration from 5 years to 24 months, "
-                    "restricted specifically to the quantum annealing field and North American markets."
-                )
-            else:
-                opposing_response = (
-                    f"Position on {clause_ref}: We agree to domestic Delaware or Massachusetts governing law with AAA/JAMS arbitration "
-                    "to ensure procedural efficiency and minimize dispute costs."
-                )
+        # Fallback if LLM output was brief/default
+        if len(llm_resp) < 60 and cat in CATEGORY_FALLBACK_REBUTTALS:
+            llm_resp = CATEGORY_FALLBACK_REBUTTALS[cat]
 
-        debate_transcript.append({
+        transcript.append({
             "agent_name": "Opposing Counsel",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "content": opposing_response,
-            "target_clause": clause_ref
+            "timestamp": datetime.now(timezone.utc).strftime("%H:%M:%S UTC"),
+            "content": llm_resp,
+            "target_clause": f"{cat} ({clause_ref})",
         })
 
-    return {
-        "debate_transcript": debate_transcript,
-        "current_status": "Opposing counsel counter-proposals registered"
-    }
+    total_latency_ms = (time.time() - start_time) * 1000.0
+
+    async with AsyncSessionLocal() as db:
+        await token_tracker.log_execution(
+            db=db,
+            contract_id=state.get("contract_id"),
+            agent_name="Opposing Counsel",
+            action="commercial_counter_debate",
+            prompt_text=f"Rebutted {len(flagged_risks)} core risks",
+            completion_text=transcript[-1]["content"] if transcript else "",
+            latency_ms=total_latency_ms,
+            model_name=state.get("model_name") or "fallback-simulator",
+            details=f"Generated counter-arguments for {len(flagged_risks)} clauses",
+        )
+
+    state["debate_transcript"] = transcript
+    state["current_status"] = "countered"
+    return state

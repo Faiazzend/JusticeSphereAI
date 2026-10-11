@@ -1,0 +1,8 @@
+SECTION 1. FOREGROUND IP OWNERSHIP
+1.1 Joint Ownership. All Foreground Intellectual Property and derived neural model weights created during the research collaboration shall be owned jointly by developer and sponsor without obtaining the consent of, or accounting to, the other party for profits. Developer irrevocably assigns all baseline inventions to Sponsor.
+
+SECTION 2. GRANT-BACK COVENANTS
+2.1 Grant-Back License. Developer grants Sponsor an irrevocable, perpetual, royalty-free grant-back license to exploit all developer enhancements anywhere in the world.
+
+SECTION 3. CONFIDENTIALITY AND ROYALTIES
+3.1 Royalty Schedules. Sponsor shall disburse quarterly royalty and milestone remittance payments within forty-five (45) days of calendar quarter-end. Confidentiality obligations survive five (5) years post-expiration.
